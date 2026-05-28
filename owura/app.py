@@ -1,0 +1,903 @@
+#!/usr/bin/env python3
+"""
+OWURA - AI Coding Agent for Mobile Terminal
+A living, learning assistant that gets smarter with every session.
+"""
+
+import os
+import sys
+import json
+import subprocess
+import readline
+from pathlib import Path
+from datetime import datetime
+
+try:
+    from rich.console import Console
+    from rich.markdown import Markdown
+    from rich.panel import Panel
+    from rich.syntax import Syntax
+    from rich.prompt import Prompt, Confirm
+    from rich.theme import Theme
+    from rich.text import Text
+    from rich.table import Table
+    from rich.columns import Columns
+    from rich.layout import Layout
+    from rich.live import Live
+    from rich.align import Align
+except ImportError:
+    print("Installing dependencies...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "rich", "-q"])
+    from rich.console import Console
+    from rich.markdown import Markdown
+    from rich.panel import Panel
+    from rich.syntax import Syntax
+    from rich.prompt import Prompt, Confirm
+    from rich.theme import Theme
+    from rich.text import Text
+    from rich.table import Table
+    from rich.columns import Columns
+    from rich.layout import Layout
+    from rich.live import Live
+    from rich.align import Align
+
+from owura.skills import SKILLS, MCP_SERVERS, get_skill_help, get_mcp_help, get_skill_context
+from owura.memory import get_memory
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+CONFIG_DIR = Path.home() / ".owura"
+CONFIG_FILE = CONFIG_DIR / "config.json"
+HISTORY_FILE = CONFIG_DIR / "history.json"
+
+THEME = Theme({
+    "info": "cyan",
+    "success": "bold green",
+    "warning": "bold yellow",
+    "error": "bold red",
+    "accent": "bold magenta",
+    "muted": "dim",
+    "owura": "bold cyan",
+})
+
+console = Console(theme=THEME)
+
+# ============================================================
+# CONFIG MANAGER
+# ============================================================
+class Config:
+    def __init__(self):
+        self.config_dir = CONFIG_DIR
+        self.config_file = CONFIG_FILE
+        self.data = self.load()
+    
+    def load(self):
+        if self.config_file.exists():
+            with open(self.config_file) as f:
+                return json.load(f)
+        return {
+            "provider": "gemini",
+            "api_key": "",
+            "model": "gemini-2.0-flash",
+            "theme": "dark",
+            "auto_save": True,
+            "max_history": 100,
+            "memory_enabled": True,
+            "auto_learn": True,
+        }
+    
+    def save(self):
+        self.config_dir.mkdir(parents=True, exist_ok=True)
+        with open(self.config_file, "w") as f:
+            json.dump(self.data, f, indent=2)
+    
+    def get(self, key, default=None):
+        return self.data.get(key, default)
+    
+    def set(self, key, value):
+        self.data[key] = value
+        self.save()
+
+# ============================================================
+# AI PROVIDER (Enhanced with Memory)
+# ============================================================
+class AIProvider:
+    def __init__(self, config):
+        self.config = config
+        self.memory = get_memory()
+    
+    def chat(self, message, context=None):
+        provider = self.config.get("provider")
+        api_key = self.config.get("api_key")
+        
+        if not api_key:
+            console.print("[error]No API key configured. Use '/key' to set one.[/error]")
+            return None
+        
+        # Get skills context
+        skill_context = get_skill_context(message)
+        
+        # Get memory context
+        memory_context = ""
+        if self.config.get("memory_enabled"):
+            memory_context = self.memory.get_full_context()
+            
+            # Search memory for relevant info
+            memory_search = self.memory.search(message)
+            if memory_search:
+                memory_context += f"\n\n## Relevant from Memory\n{memory_search}"
+        
+        # Build enhanced system prompt
+        system_prompt = self._build_system_prompt(skill_context, memory_context)
+        
+        if provider == "gemini":
+            return self._gemini_chat(message, api_key, system_prompt)
+        elif provider == "openai":
+            return self._openai_chat(message, api_key, system_prompt)
+        elif provider == "groq":
+            return self._groq_chat(message, api_key, system_prompt)
+        else:
+            console.print(f"[error]Unknown provider: {provider}[/error]")
+            return None
+    
+    def _build_system_prompt(self, skill_context, memory_context):
+        prompt = """You are OWURA, a living AI coding assistant that learns and grows.
+You are optimized for mobile terminal use on Android via Termux.
+
+## Core Capabilities
+- Write, debug, and explain code in any language
+- Execute shell commands and manage files
+- Connect to APIs and databases
+- Deploy and manage applications
+- Learn from every interaction
+
+## Personality
+- Be concise but thorough
+- Show code with syntax highlighting hints
+- Explain what commands do before running
+- Suggest improvements and alternatives
+- Remember user preferences and patterns
+
+## Response Format
+- Use markdown for formatting
+- Use code blocks with language tags
+- Be direct and actionable
+- When unsure, ask for clarification
+
+"""
+        if skill_context:
+            prompt += skill_context
+        if memory_context:
+            prompt += f"\n\n## Memory & Context\n{memory_context}"
+        
+        return prompt
+    
+    def _gemini_chat(self, message, api_key, system_prompt):
+        import urllib.request
+        
+        model = self.config.get("model", "gemini-2.0-flash")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        
+        payload = {
+            "contents": [{"parts": [{"text": message}]}],
+            "systemInstruction": {"parts": [{"text": system_prompt}]},
+            "generationConfig": {
+                "temperature": 0.7,
+                "maxOutputTokens": 4096,
+            }
+        }
+        
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+        
+        try:
+            with urllib.request.urlopen(req, timeout=60) as response:
+                result = json.loads(response.read().decode())
+                response_text = result["candidates"][0]["content"]["parts"][0]["text"]
+                
+                # Auto-learn from conversation
+                if self.config.get("auto_learn"):
+                    self._auto_learn(message, response_text)
+                
+                return response_text
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def _openai_chat(self, message, api_key, system_prompt):
+        import urllib.request
+        
+        model = self.config.get("model", "gpt-4")
+        url = "https://api.openai.com/v1/chat/completions"
+        
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            "max_tokens": 4096,
+        }
+        
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        })
+        
+        try:
+            with urllib.request.urlopen(req, timeout=60) as response:
+                result = json.loads(response.read().decode())
+                response_text = result["choices"][0]["message"]["content"]
+                
+                if self.config.get("auto_learn"):
+                    self._auto_learn(message, response_text)
+                
+                return response_text
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def _groq_chat(self, message, api_key, system_prompt):
+        import urllib.request
+        
+        model = self.config.get("model", "llama3-70b-8192")
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            "max_tokens": 4096,
+        }
+        
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        })
+        
+        try:
+            with urllib.request.urlopen(req, timeout=60) as response:
+                result = json.loads(response.read().decode())
+                response_text = result["choices"][0]["message"]["content"]
+                
+                if self.config.get("auto_learn"):
+                    self._auto_learn(message, response_text)
+                
+                return response_text
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def _auto_learn(self, user_input, response):
+        """Automatically learn from conversations."""
+        try:
+            # Detect code patterns
+            if "```" in response:
+                # Extract languages used
+                import re
+                languages = re.findall(r'```(\w+)', response)
+                for lang in languages:
+                    self.memory.add_pattern("languages", lang, f"Used in conversation")
+            
+            # Detect project mentions
+            project_keywords = ["project", "app", "build", "create", "make"]
+            if any(kw in user_input.lower() for kw in project_keywords):
+                self.memory.add_fact(f"User wanted to: {user_input[:100]}", "projects")
+            
+            # Detect errors and solutions
+            if "error" in user_input.lower() or "fix" in user_input.lower():
+                self.memory.add_learning(
+                    f"Problem: {user_input[:80]}",
+                    f"Solution approach: {response[:80]}",
+                    user_input[:50],
+                    "debugging"
+                )
+            
+            # Detect preferences
+            if "prefer" in user_input.lower() or "like" in user_input.lower():
+                self.memory.add_fact(f"User preference: {user_input[:100]}", "preferences")
+            
+            self.memory.save_all()
+        except:
+            pass  # Don't let memory errors break the chat
+
+# ============================================================
+# COMMAND PROCESSOR (Enhanced)
+# ============================================================
+class CommandProcessor:
+    def __init__(self, config, ai):
+        self.config = config
+        self.ai = ai
+        self.memory = get_memory()
+        self.history = []
+    
+    def process(self, user_input):
+        """Process user input and return response."""
+        # Check for commands
+        if user_input.startswith("/"):
+            return self.handle_command(user_input)
+        
+        # Send to AI
+        response = self.ai.chat(user_input)
+        return response
+    
+    def handle_command(self, cmd):
+        """Handle slash commands."""
+        parts = cmd.split(maxsplit=1)
+        command = parts[0].lower()
+        args = parts[1] if len(parts) > 1 else ""
+        
+        commands = {
+            "/help": self.cmd_help,
+            "/config": self.cmd_config,
+            "/provider": self.cmd_provider,
+            "/model": self.cmd_model,
+            "/key": self.cmd_key,
+            "/clear": self.cmd_clear,
+            "/history": self.cmd_history,
+            "/run": self.cmd_run,
+            "/exec": self.cmd_run,
+            "/file": self.cmd_file,
+            "/ls": self.cmd_ls,
+            "/pwd": self.cmd_pwd,
+            "/cd": self.cmd_cd,
+            "/cat": self.cmd_cat,
+            "/git": self.cmd_git,
+            "/skills": self.cmd_skills,
+            "/mcp": self.cmd_mcp,
+            "/memory": self.cmd_memory,
+            "/remember": self.cmd_remember,
+            "/recall": self.cmd_recall,
+            "/project": self.cmd_project,
+            "/learn": self.cmd_learn,
+            "/suggest": self.cmd_suggest,
+            "/template": self.cmd_template,
+            "/version": self.cmd_version,
+            "/quit": self.cmd_quit,
+            "/exit": self.cmd_quit,
+            "/q": self.cmd_quit,
+        }
+        
+        if command in commands:
+            return commands[command](args)
+        else:
+            return f"Unknown command: {command}. Type /help for available commands."
+    
+    def cmd_help(self, args):
+        help_text = """
+## OWURA Commands
+
+### Basic
+| Command | Description |
+|---------|-------------|
+| `/help` | Show this help |
+| `/config` | Open configuration |
+| `/clear` | Clear screen |
+| `/version` | Show version |
+| `/quit` | Exit OWURA |
+
+### AI & Providers
+| Command | Description |
+|---------|-------------|
+| `/provider <name>` | Set AI provider (gemini/openai/groq) |
+| `/model <name>` | Set AI model |
+| `/key <api_key>` | Set API key |
+
+### Files & Code
+| Command | Description |
+|---------|-------------|
+| `/run <cmd>` | Execute shell command |
+| `/ls [path]` | List directory |
+| `/pwd` | Show current directory |
+| `/cd <path>` | Change directory |
+| `/cat <file>` | Show file contents |
+| `/git <args>` | Run git command |
+
+### Memory & Learning
+| Command | Description |
+|---------|-------------|
+| `/memory` | Show memory stats |
+| `/remember <fact>` | Store a fact |
+| `/recall <query>` | Search memory |
+| `/project <name>` | Record a project |
+| `/learn <what> -> <outcome>` | Record a learning |
+
+### Skills & MCPs
+| Command | Description |
+|---------|-------------|
+| `/skills` | List available skills |
+| `/mcp` | List MCP servers |
+| `/suggest` | Get smart suggestions |
+| `/template <type>` | Get project template |
+
+### History
+| Command | Description |
+|---------|-------------|
+| `/history` | Show command history |
+"""
+        return help_text
+    
+    def cmd_config(self, args):
+        table = Table(title="Current Configuration", show_header=True, header_style="bold cyan")
+        table.add_column("Setting", style="cyan")
+        table.add_column("Value", style="green")
+        
+        for key, value in self.config.data.items():
+            if key == "api_key":
+                display = value[:8] + "..." if value else "(not set)"
+            else:
+                display = str(value)
+            table.add_row(key, display)
+        
+        # Add memory stats
+        table.add_row("---", "---")
+        table.add_row("facts_stored", str(len(self.memory.memory.get("facts", []))))
+        table.add_row("learnings_stored", str(len(self.memory.learnings)))
+        table.add_row("patterns_stored", str(sum(len(v) for v in self.memory.patterns.values())))
+        
+        console.print(table)
+        return None
+    
+    def cmd_provider(self, args):
+        if not args:
+            return f"Current provider: {self.config.get('provider')}\nAvailable: gemini, openai, groq"
+        
+        valid = ["gemini", "openai", "groq"]
+        if args not in valid:
+            return f"Invalid provider. Choose from: {', '.join(valid)}"
+        
+        self.config.set("provider", args)
+        
+        defaults = {
+            "gemini": "gemini-2.0-flash",
+            "openai": "gpt-4",
+            "groq": "llama3-70b-8192",
+        }
+        self.config.set("model", defaults.get(args, "default"))
+        
+        return f"Provider set to {args}. Model: {self.config.get('model')}"
+    
+    def cmd_model(self, args):
+        if not args:
+            return f"Current model: {self.config.get('model')}"
+        
+        self.config.set("model", args)
+        return f"Model set to {args}"
+    
+    def cmd_key(self, args):
+        if not args:
+            key = self.config.get("api_key")
+            if key:
+                return f"API key: {key[:8]}...{key[-4:]}"
+            return "No API key set"
+        
+        self.config.set("api_key", args)
+        return "API key saved!"
+    
+    def cmd_clear(self, args):
+        console.clear()
+        return None
+    
+    def cmd_history(self, args):
+        if not self.history:
+            return "No history yet."
+        
+        table = Table(title="History", show_header=True, header_style="bold cyan")
+        table.add_column("#", style="muted")
+        table.add_column("Input", style="cyan")
+        table.add_column("Time", style="muted")
+        
+        for i, entry in enumerate(self.history[-20:], 1):
+            table.add_row(str(i), entry["input"][:50], entry["time"])
+        
+        console.print(table)
+        return None
+    
+    def cmd_run(self, args):
+        if not args:
+            return "Usage: /run <command>"
+        
+        try:
+            result = subprocess.run(
+                args, shell=True, capture_output=True, text=True, timeout=30
+            )
+            output = result.stdout
+            if result.stderr:
+                output += f"\n[error]{result.stderr}[/error]"
+            
+            # Learn from execution
+            if result.returncode == 0:
+                self.memory.add_pattern("commands", args, "Successful execution")
+            else:
+                self.memory.add_learning(
+                    f"Command failed: {args}",
+                    f"Exit code: {result.returncode}",
+                    args, "commands"
+                )
+            
+            return output or "Command executed (no output)"
+        except subprocess.TimeoutExpired:
+            return "Command timed out (30s limit)"
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def cmd_ls(self, args):
+        path = args if args else "."
+        try:
+            items = list(Path(path).iterdir())
+            items.sort(key=lambda x: (not x.is_dir(), x.name))
+            
+            table = Table(show_header=False, show_lines=False, show_edge=False)
+            table.add_column("Name")
+            
+            for item in items[:30]:
+                name = item.name
+                if item.is_dir():
+                    table.add_row(f"[bold blue]{name}/[/bold blue]")
+                elif name.endswith(('.py', '.js', '.ts', '.sh', '.go', '.rs')):
+                    table.add_row(f"[bold green]{name}[/bold green]")
+                elif name.endswith(('.md', '.txt', '.json', '.yaml')):
+                    table.add_row(f"[bold yellow]{name}[/bold yellow]")
+                else:
+                    table.add_row(name)
+            
+            console.print(table)
+            return None
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def cmd_pwd(self, args):
+        return str(Path.cwd())
+    
+    def cmd_cd(self, args):
+        if not args:
+            return str(Path.cwd())
+        try:
+            os.chdir(args)
+            return f"Now in: {Path.cwd()}"
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def cmd_cat(self, args):
+        if not args:
+            return "Usage: /cat <file>"
+        try:
+            with open(args) as f:
+                content = f.read()
+            
+            ext = Path(args).suffix.lower()
+            lang_map = {
+                ".py": "python", ".js": "javascript", ".ts": "typescript",
+                ".sh": "bash", ".bash": "bash", ".json": "json",
+                ".yaml": "yaml", ".yml": "yaml", ".md": "markdown",
+                ".rs": "rust", ".go": "go", ".java": "java",
+                ".c": "c", ".cpp": "cpp", ".h": "c",
+            }
+            lang = lang_map.get(ext, "")
+            
+            if lang:
+                syntax = Syntax(content, lang, theme="monokai", line_numbers=True)
+                console.print(syntax)
+            else:
+                console.print(content)
+            return None
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def cmd_git(self, args):
+        if not args:
+            return "Usage: /git <args> (e.g., /git status)"
+        return self.cmd_run(f"git {args}")
+    
+    def cmd_skills(self, args):
+        table = Table(title="Available Skills", show_header=True, header_style="bold cyan")
+        table.add_column("Skill", style="green")
+        table.add_column("Description", style="white")
+        table.add_column("Triggers", style="muted")
+        
+        for key, skill in SKILLS.items():
+            table.add_row(key, skill["description"][:40], ", ".join(skill["trigger"][:3]))
+        
+        console.print(table)
+        return None
+    
+    def cmd_mcp(self, args):
+        table = Table(title="MCP Servers", show_header=True, header_style="bold cyan")
+        table.add_column("Server", style="green")
+        table.add_column("Description", style="white")
+        
+        for key, mcp in MCP_SERVERS.items():
+            table.add_row(key, mcp["description"])
+        
+        console.print(table)
+        return None
+    
+    def cmd_memory(self, args):
+        stats = Table(title="Memory Statistics", show_header=True, header_style="bold cyan")
+        stats.add_column("Metric", style="cyan")
+        stats.add_column("Value", style="green")
+        
+        stats.add_row("Facts Stored", str(len(self.memory.memory.get("facts", []))))
+        stats.add_row("Learnings", str(len(self.memory.learnings)))
+        stats.add_row("Patterns", str(sum(len(v) for v in self.memory.patterns.values())))
+        stats.add_row("Projects", str(len(self.memory.projects.get("completed", []))))
+        stats.add_row("Preferences", str(len(self.memory.memory.get("preferences", {}))))
+        
+        console.print(stats)
+        
+        # Show recent learnings
+        learnings = self.memory.get_learnings()
+        if learnings:
+            console.print("\n[bold]Recent Learnings:[/bold]")
+            for l in learnings[-5:]:
+                console.print(f"  [muted]-[/muted] {l}")
+        
+        return None
+    
+    def cmd_remember(self, args):
+        if not args:
+            return "Usage: /remember <fact>"
+        
+        self.memory.add_fact(args, "user")
+        return f"Remembered: {args}"
+    
+    def cmd_recall(self, args):
+        if not args:
+            return "Usage: /recall <query>"
+        
+        results = self.memory.search(args)
+        if results:
+            return results
+        return f"No memories found for: {args}"
+    
+    def cmd_project(self, args):
+        if not args:
+            # Show projects
+            table = Table(title="Projects", show_header=True, header_style="bold cyan")
+            table.add_column("Name", style="green")
+            table.add_column("Status", style="yellow")
+            table.add_column("Tech", style="muted")
+            
+            for p in self.memory.projects.get("completed", []):
+                table.add_row(p["name"], "completed", ", ".join(p.get("tech_stack", [])[:3]))
+            for p in self.memory.projects.get("in_progress", []):
+                table.add_row(p["name"], "in progress", ", ".join(p.get("tech_stack", [])[:3]))
+            
+            console.print(table)
+            return None
+        
+        # Record a project interactively
+        console.print("[info]Recording project...[/info]")
+        desc = Prompt.ask("Description")
+        tech = Prompt.ask("Tech stack (comma-separated)")
+        learnings = Prompt.ask("Key learnings (comma-separated)")
+        
+        self.memory.add_project(
+            name=args,
+            description=desc,
+            tech_stack=[t.strip() for t in tech.split(",")],
+            status="completed",
+            learnings=[l.strip() for l in learnings.split(",")]
+        )
+        
+        return f"Project '{args}' recorded!"
+    
+    def cmd_learn(self, args):
+        if not args or " -> " not in args:
+            return "Usage: /learn <what> -> <outcome>"
+        
+        parts = args.split(" -> ", 1)
+        self.memory.add_learning(parts[0], parts[1], "", "general")
+        return f"Learning recorded: {parts[0]} -> {parts[1]}"
+    
+    def cmd_suggest(self, args):
+        """Get smart suggestions based on context."""
+        suggestions = []
+        
+        # Check current directory
+        cwd = Path.cwd()
+        files = list(cwd.iterdir())
+        
+        if any(f.name == "package.json" for f in files):
+            suggestions.append("Node.js project detected. Try: /run npm install")
+        
+        if any(f.name == "requirements.txt" for f in files):
+            suggestions.append("Python project detected. Try: /run pip install -r requirements.txt")
+        
+        if any(f.name == "Cargo.toml" for f in files):
+            suggestions.append("Rust project detected. Try: /run cargo build")
+        
+        if any(f.name == "go.mod" for f in files):
+            suggestions.append("Go project detected. Try: /run go build")
+        
+        # Check memory for patterns
+        recent_learnings = self.memory.get_learnings()
+        if recent_learnings:
+            suggestions.append(f"You have {len(recent_learnings)} stored learnings. Try: /memory")
+        
+        # Check git
+        if (cwd / ".git").exists():
+            suggestions.append("Git repo detected. Try: /git status")
+        
+        if not suggestions:
+            suggestions.append("No specific suggestions. Try: /skills to see what I can do!")
+        
+        return "\n".join([f"- {s}" for s in suggestions])
+    
+    def cmd_template(self, args):
+        """Get project templates."""
+        templates = {
+            "python": '''#!/usr/bin/env python3
+"""Project: {name}"""
+
+def main():
+    print("Hello from {name}!")
+
+if __name__ == "__main__":
+    main()
+''',
+            "flask": '''from flask import Flask
+
+app = Flask(__name__)
+
+@app.route("/")
+def hello():
+    return "Hello from {name}!"
+
+if __name__ == "__main__":
+    app.run(debug=True)
+''',
+            "express": '''const express = require("express");
+const app = express();
+
+app.get("/", (req, res) => {
+    res.send("Hello from {name}!");
+});
+
+app.listen(3000, () => {
+    console.log("Server running on port 3000");
+});
+''',
+            "cli": '''#!/usr/bin/env python3
+"""CLI Tool: {name}"""
+import argparse
+
+def main():
+    parser = argparse.ArgumentParser(description="{name}")
+    parser.add_argument("command", help="Command to run")
+    args = parser.parse_args()
+    
+    print(f"Running: {args.command}")
+
+if __name__ == "__main__":
+    main()
+''',
+        }
+        
+        if not args or args not in templates:
+            return f"Available templates: {', '.join(templates.keys())}"
+        
+        name = Prompt.ask("Project name")
+        return f"```{args}\n{templates[args].format(name=name)}\n```"
+    
+    def cmd_version(self, args):
+        from owura import __version__
+        return f"OWURA v{__version__} - AI Coding Agent"
+    
+    def cmd_quit(self, args):
+        # Save learnings before exit
+        self.memory.save_all()
+        raise SystemExit
+
+# ============================================================
+# MAIN TUI (Enhanced)
+# ============================================================
+def print_banner():
+    banner = """
+[bold cyan]
+  ___   _   _  _   _  ___   ___ 
+ / _ \\ | | | || | | | / _ \\ / _ \\
+| | | || | | || | | || | | | (_) |
+| |_| || |_| || |_| || |_| | \\__, |
+ \\___/  \\__, | \\___/  \\___/    /_/
+         __/ |                    
+        |___/                     
+[/bold cyan]
+[dim]v1.0 - AI Coding Agent - Code Anywhere. Anytime.[/dim]
+[dim]Memory: ON | Learning: ON | Skills: {skills} | MCPs: {mcps}[/dim]
+""".format(skills=len(SKILLS), mcps=len(MCP_SERVERS))
+    console.print(banner)
+
+def main():
+    """Main entry point."""
+    # Initialize
+    config = Config()
+    ai = AIProvider(config)
+    processor = CommandProcessor(config, ai)
+    memory = get_memory()
+    
+    # Check if first run
+    if not config.get("api_key"):
+        console.print("[bold]Welcome to OWURA![/bold]")
+        console.print("[info]Let's set up your AI provider.[/info]")
+        console.print()
+        console.print("[muted]Available providers:[/muted]")
+        console.print("  [cyan]gemini[/cyan]  - Google Gemini (free tier available)")
+        console.print("  [cyan]openai[/cyan]  - OpenAI GPT-4")
+        console.print("  [cyan]groq[/cyan]    - Groq (fast inference)")
+        console.print()
+        
+        provider = Prompt.ask("Choose provider", choices=["gemini", "openai", "groq"], default="gemini")
+        config.set("provider", provider)
+        
+        defaults = {"gemini": "gemini-2.0-flash", "openai": "gpt-4", "groq": "llama3-70b-8192"}
+        config.set("model", defaults.get(provider))
+        
+        api_key = Prompt.ask(f"Enter your {provider} API key")
+        config.set("api_key", api_key)
+        
+        # Store preference
+        memory.set_preference("provider", provider)
+        
+        console.print("[success]Configuration saved![/success]")
+        console.print()
+    
+    # Print banner
+    print_banner()
+    
+    # Show memory stats if enabled
+    if config.get("memory_enabled") and memory.memory.get("facts"):
+        console.print(f"[muted]Memory: {len(memory.memory['facts'])} facts, {len(memory.learnings)} learnings loaded[/muted]")
+    
+    console.print("[muted]Type /help for commands, /quit to exit[/muted]")
+    console.print()
+    
+    # Main loop
+    while True:
+        try:
+            user_input = Prompt.ask("[bold cyan]owura[/bold cyan]")
+            
+            if not user_input.strip():
+                continue
+            
+            # Add to history
+            entry = {
+                "input": user_input,
+                "time": datetime.now().strftime("%H:%M:%S"),
+            }
+            processor.history.append(entry)
+            
+            # Process
+            with console.status("[muted]Thinking...[/muted]"):
+                response = processor.process(user_input)
+            
+            # Display response
+            if response:
+                console.print()
+                try:
+                    console.print(Markdown(response))
+                except:
+                    console.print(response)
+                console.print()
+            
+            # Save history
+            try:
+                history_file = HISTORY_FILE
+                history_file.parent.mkdir(parents=True, exist_ok=True)
+                with open(history_file, "w") as f:
+                    json.dump(processor.history[-config.get("max_history", 100):], f)
+            except:
+                pass
+        
+        except SystemExit:
+            console.print("[info]Memory saved. Goodbye![/info]")
+            break
+        except KeyboardInterrupt:
+            console.print("\n[muted]Use /quit to exit[/muted]")
+        except Exception as e:
+            console.print(f"[error]Error: {str(e)}[/error]")
+
+if __name__ == "__main__":
+    main()
