@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#1a1a2e">
+    android:background="#0a0a0f">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,86 +13,95 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="API Keys"
+            android:text="OWURA KEYS"
             android:textSize="24sp"
-            android:textColor="#ffffff"
+            android:textColor="#00ff88"
             android:textStyle="bold"
+            android:fontFamily="monospace"
             android:layout_marginBottom="8dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Configure your AI provider keys"
-            android:textSize="14sp"
-            android:textColor="#aaaaaa"
+            android:text="> Configure your AI providers"
+            android:textSize="12sp"
+            android:textColor="#00aa55"
+            android:fontFamily="monospace"
             android:layout_marginBottom="24dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Google AI Studio Key"
-            android:textSize="14sp"
-            android:textColor="#4ecca3"
+            android:text="GOOGLE_AI_STUDIO_KEY:"
+            android:textSize="12sp"
+            android:textColor="#00ff88"
+            android:fontFamily="monospace"
             android:layout_marginBottom="4dp" />
 
         <EditText
             android:id="@+id/googleKey"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:hint="Enter your Google AI key"
-            android:textColor="#ffffff"
-            android:textColorHint="#666666"
-            android:background="#16213e"
+            android:hint="Enter key..."
+            android:textColor="#00ff88"
+            android:textColorHint="#005533"
+            android:background="#1a1a2e"
             android:padding="12dp"
+            android:fontFamily="monospace"
             android:inputType="textPassword"
             android:layout_marginBottom="16dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Groq API Key"
-            android:textSize="14sp"
-            android:textColor="#4ecca3"
+            android:text="GROQ_API_KEY:"
+            android:textSize="12sp"
+            android:textColor="#00ff88"
+            android:fontFamily="monospace"
             android:layout_marginBottom="4dp" />
 
         <EditText
             android:id="@+id/groqKey"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:hint="Enter your Groq key"
-            android:textColor="#ffffff"
-            android:textColorHint="#666666"
-            android:background="#16213e"
+            android:hint="Enter key..."
+            android:textColor="#00ff88"
+            android:textColorHint="#005533"
+            android:background="#1a1a2e"
             android:padding="12dp"
+            android:fontFamily="monospace"
             android:inputType="textPassword"
             android:layout_marginBottom="16dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="NVIDIA API Key"
-            android:textSize="14sp"
-            android:textColor="#4ecca3"
+            android:text="NVIDIA_API_KEY:"
+            android:textSize="12sp"
+            android:textColor="#00ff88"
+            android:fontFamily="monospace"
             android:layout_marginBottom="4dp" />
 
         <EditText
             android:id="@+id/nvidiaKey"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:hint="Enter your NVIDIA key"
-            android:textColor="#ffffff"
-            android:textColorHint="#666666"
-            android:background="#16213e"
+            android:hint="Enter key..."
+            android:textColor="#00ff88"
+            android:textColorHint="#005533"
+            android:background="#1a1a2e"
             android:padding="12dp"
+            android:fontFamily="monospace"
             android:inputType="textPassword"
             android:layout_marginBottom="16dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Ollama Host"
-            android:textSize="14sp"
-            android:textColor="#4ecca3"
+            android:text="OLLAMA_HOST:"
+            android:textSize="12sp"
+            android:textColor="#00ff88"
+            android:fontFamily="monospace"
             android:layout_marginBottom="4dp" />
 
         <EditText
@@ -100,10 +109,11 @@
             android:layout_width="match_parent"
             android:layout_height="48dp"
             android:hint="http://localhost:11434"
-            android:textColor="#ffffff"
-            android:textColorHint="#666666"
-            android:background="#16213e"
+            android:textColor="#00ff88"
+            android:textColorHint="#005533"
+            android:background="#1a1a2e"
             android:padding="12dp"
+            android:fontFamily="monospace"
             android:inputType="textUri"
             android:layout_marginBottom="24dp" />
 
@@ -112,28 +122,33 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text=""
-            android:textSize="14sp"
-            android:textColor="#4ecca3"
+            android:textSize="12sp"
+            android:textColor="#00ff88"
+            android:fontFamily="monospace"
             android:layout_marginBottom="16dp" />
 
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="Save Keys"
-            android:textSize="16sp"
-            android:backgroundTint="#e94560"
-            android:textColor="#ffffff"
+            android:text="[ SAVE KEYS ]"
+            android:textSize="14sp"
+            android:textAllCaps="false"
+            android:backgroundTint="#1a1a2e"
+            android:textColor="#00ff88"
+            android:fontFamily="monospace"
             android:layout_marginBottom="12dp" />
 
         <Button
             android:id="@+id/btnBack"
             android:layout_width="match_parent"
             android:layout_height="56dp"
-            android:text="Back"
-            android:textSize="16sp"
-            android:backgroundTint="#16213e"
-            android:textColor="#ffffff" />
+            android:text="[ BACK ]"
+            android:textSize="14sp"
+            android:textAllCaps="false"
+            android:backgroundTint="#1a1a2e"
+            android:textColor="#00ff88"
+            android:fontFamily="monospace" />
 
     </LinearLayout>
 </ScrollView>
