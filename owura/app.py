@@ -1735,21 +1735,19 @@ Because your phone is powerful enough to build the future.
 # MAIN TUI (Enhanced)
 # ============================================================
 def print_banner():
-    banner = """
+    banner = r"""
 [bold cyan]
-  ___   _   _  _   _  ___   ___ 
- / _ \\ | | | || | | | / _ \\ / _ \\
-| | | || | | || | | || | | | (_) |
-| |_| || |_| || |_| || |_| | \\__, |
- \\___/  \\__, | \\___/  \\___/    /_/
-         __/ |                    
-        |___/                     
+  ___   _      _   _   ____    _   
+ / _ \ | |    | | | | |  _ \  / \  
+| | | || | /\ | | | | | |_) |/ _ \ 
+| |_| || |/  \| | |_| |  _ </ ___ \
+ \___/ |_|    |_|\___/|_| \_/_/   \_\
 [/bold cyan]
 [dim]v1.0 - AI Coding Agent - Code Anywhere. Anytime.[/dim]
 [dim]Memory: ON | Learning: ON | Skills: {skills} | MCPs: {mcps} | Web: ON[/dim]
 
     [italic dim]"I'm not just a tool. I'm a partner in creation."[/italic dim]
-    """.format(skills=len(SKILLS), mcps=len(MCP_SERVERS))
+""".format(skills=len(SKILLS), mcps=len(MCP_SERVERS))
     console.print(banner)
 
 def main():
