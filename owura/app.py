@@ -64,7 +64,7 @@ THEME = Theme({
     "info": "cyan",
     "success": "bold green",
     "warning": "bold yellow",
-    "error": "red",
+    "error": "bold red",
     "accent": "bold magenta",
     "muted": "dim",
     "owura": "bold cyan",
@@ -1844,3 +1844,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
