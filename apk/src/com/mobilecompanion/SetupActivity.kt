@@ -1,4 +1,4 @@
-package com.mobilecompanion
+package com.owura.agent
 
 import android.content.Intent
 import android.net.Uri
@@ -38,14 +38,14 @@ class SetupActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnCopyClone).setOnClickListener {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
-            val clip = android.content.ClipData.newPlainText("command", "git clone https://github.com/agyeiboaduandy-crypto/mobile-companion.git")
+            val clip = android.content.ClipData.newPlainText("command", "git clone https://github.com/agyeiboaduandy-crypto/owura.git")
             clipboard.setPrimaryClip(clip)
             statusText.text = "Command copied!"
         }
 
         findViewById<Button>(R.id.btnCopySetup).setOnClickListener {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
-            val clip = android.content.ClipData.newPlainText("command", "cd mobile-companion && bash scripts/bootstrap.sh")
+            val clip = android.content.ClipData.newPlainText("command", "cd owura && bash scripts/bootstrap.sh")
             clipboard.setPrimaryClip(clip)
             statusText.text = "Command copied!"
         }
