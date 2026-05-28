@@ -1737,11 +1737,11 @@ Because your phone is powerful enough to build the future.
 def print_banner():
     banner = r"""
 [bold cyan]
-  ___   _      _   _   ____    _   
- / _ \ | |    | | | | |  _ \  / \  
-| | | || | /\ | | | | | |_) |/ _ \ 
-| |_| || |/  \| | |_| |  _ </ ___ \
- \___/ |_|    |_|\___/|_| \_/_/   \_\
+  _____        ___   _ ____      _    
+ / _ \ \      / / | | |  _ \    / \   
+| | | \ \ /\ / /| | | | |_) |  / _ \  
+| |_| |\ V  V / | |_| |  _ <  / ___ \ 
+ \___/  \_/\_/   \___/|_| \_\/_/   \_\
 [/bold cyan]
 [dim]v1.0 - AI Coding Agent - Code Anywhere. Anytime.[/dim]
 [dim]Memory: ON | Learning: ON | Skills: {skills} | MCPs: {mcps} | Web: ON[/dim]
