@@ -1,4 +1,4 @@
-# ðŸŒŒ OWURA
+# OWURA
 
 **AI Coding Agent for Mobile Terminal**
 
@@ -10,186 +10,130 @@
 
 ## What is OWURA?
 
-OWURA is a **living, learning AI coding assistant** that runs in your terminal. It's designed for developers who want to code anywhere, anytime - especially on mobile devices using Termux.
+OWURA is a terminal-based AI coding assistant that runs on your phone via Termux. It learns from every interaction, remembers your projects, and gets smarter over time.
 
-Unlike basic AI chatbots, OWURA:
-- **Learns from every interaction** - remembers what worked and what didn't
-- **Stores project context** - knows about your past projects and preferences
-- **Has built-in skills** - 12+ coding skills ready to use
-- **Connects to MCP servers** - Context7, GitHub, PyPI, npm, and more
-- **Works offline** - your data stays on your device
+**Perfect for:**
+- Developers without a laptop
+- Coding on the go
+- Quick prototyping
+- Learning to code
 
 ---
 
-## Quick Install
+## Install
+
+Open Termux and run:
 
 ```bash
-# One-click install
 curl -sSL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/install.sh | bash
-
-# Or manually
-git clone https://github.com/agyeiboaduandy-crypto/owura.git
-cd owura
-chmod +x install.sh
-./install.sh
 ```
 
-Then run:
+Then start it:
+
 ```bash
 owura
 ```
+
+First run will ask for your API key. Get a free one at [Google AI Studio](https://aistudio.google.com/apikey).
+
+---
+
+## Usage
+
+Once installed, just type `owura` in Termux.
+
+### Chat with AI
+
+```
+owura> Write a Python function to sort a list
+owura> How do I connect to a database?
+owura> Debug this code: [paste code]
+```
+
+### Run Commands
+
+```
+/ls                    # List files
+/pwd                   # Show current directory
+/run python3 app.py    # Run a command
+/git status            # Git commands
+```
+
+### Memory System
+
+```
+/remember Use virtual environments always    # Store a fact
+/recall python                                # Search memory
+/memory                                       # View all memories
+```
+
+### System Management
+
+```
+/status    # Show disk and memory usage
+/compact   # Clean caches and free space
+/clean     # Quick cleanup
+```
+
+### Get Help
+
+```
+/help      # Show all commands
+/skills    # List coding skills
+/mcp       # List connected services
+```
+
+---
+
+## Commands
+
+| Command | What it does |
+|---------|--------------|
+| `/help` | Show all commands |
+| `/run <cmd>` | Run a shell command |
+| `/ls` | List files |
+| `/cat <file>` | View a file |
+| `/git <args>` | Run git |
+| `/memory` | View memory stats |
+| `/compact` | Clean caches |
+| `/status` | System status |
+| `/quit` | Exit OWURA |
 
 ---
 
 ## Features
 
-### ðŸ§  Persistent Memory
-OWURA remembers everything:
-- Facts and preferences
-- Project details
-- Code patterns that work
-- Errors and their solutions
+### Learns From You
+- Remembers what worked
+- Stores your preferences
+- Tracks your projects
+- Remembers errors and solutions
 
-### ðŸ› ï¸ Built-in Skills
-| Skill | Description |
-|-------|-------------|
-| `web-search` | Search documentation and examples |
-| `file-operations` | Create, read, update files |
-| `git-operations` | Version control |
-| `python-dev` | Python development |
-| `nodejs-dev` | Node.js development |
-| `shell-scripting` | Bash scripting |
-| `api-integration` | Connect to APIs |
-| `database` | SQL and NoSQL |
-| `docker` | Container management |
-| `security` | Secure coding |
-| `testing` | Test and debug |
-| `deployment` | Deploy apps |
+### Built-in Skills
+- Python, Node.js, Shell scripting
+- Git operations
+- File management
+- API integration
+- Database queries
+- Docker
+- Security best practices
 
-### ðŸ”Œ MCP Servers
-- **Context7** - Up-to-date documentation
-- **GitHub** - Repos, issues, code search
-- **PyPI** - Python packages
-- **npm** - Node.js packages
-- **StackOverflow** - Find solutions
-- **DevDocs** - Developer documentation
+### MCP Integrations
+- Context7 (documentation)
+- GitHub
+- PyPI / npm
+- StackOverflow
 
-### ðŸ“ Commands
-
-| Command | Description |
-|---------|-------------|
-| `/help` | Show all commands |
-| `/config` | View configuration |
-| `/provider <name>` | Set AI provider |
-| `/key <api_key>` | Set API key |
-| `/run <cmd>` | Execute command |
-| `/memory` | View memory stats |
-| `/remember <fact>` | Store a fact |
-| `/recall <query>` | Search memory |
-| `/project <name>` | Record project |
-| `/skills` | List skills |
-| `/mcp` | List MCP servers |
-| `/suggest` | Get suggestions |
-| `/template <type>` | Get template |
-| `/quit` | Exit |
-
----
-
-## Configuration
-
-### Providers
-- **Gemini** (free tier available) - Get key at [AI Studio](https://aistudio.google.com/apikey)
-- **OpenAI** - Get key at [OpenAI](https://platform.openai.com/api-keys)
-- **Groq** - Get key at [Groq](https://console.groq.com/keys)
-
-### First Run
-```bash
-owura
-# Follow the prompts to set your provider and API key
-```
-
-### Change Provider
-```
-/provider gemini
-/key your-api-key-here
-```
-
----
-
-## Memory System
-
-OWURA learns automatically:
-- **Code patterns** - remembers successful commands
-- **Errors & solutions** - learns from debugging
-- **User preferences** - adapts to your style
-- **Project context** - tracks your projects
-
-### Manual Memory
-```
-/remember Python 3.12 has new type hints
-/recall python
-/project myapp --record a new project
-/learn pip install breaks on arm64 -> use --platform flag
-```
-
----
-
-## Project Structure
-
-```
-owura/
-â”œâ”€â”€ owura/
-â”‚   â”œâ”€â”€ __init__.py      # Package init
-â”‚   â”œâ”€â”€ __main__.py      # Entry point
-â”‚   â”œâ”€â”€ app.py           # Main application
-â”‚   â”œâ”€â”€ skills.py        # Built-in skills
-â”‚   â””â”€â”€ memory.py        # Memory system
-â”œâ”€â”€ install.sh           # Installer
-â”œâ”€â”€ uninstall.sh         # Uninstaller
-â”œâ”€â”€ requirements.txt     # Dependencies
-â”œâ”€â”€ setup.py            # Package setup
-â””â”€â”€ README.md           # This file
-```
-
----
-
-## Usage Examples
-
-### Chat with AI
-```
-owura> Write a Python function to sort a list
-owura> How do I connect to PostgreSQL?
-owura> Debug this code: [paste code]
-```
-
-### Execute Commands
-```
-/ls
-/pwd
-/run python3 script.py
-/git status
-```
-
-### Memory
-```
-/recall python
-/memory
-/remember Use virtual environments always
-```
-
-### Skills
-```
-/skills
-/web-search how to use async await in Python
-```
+### Auto-Compaction
+- Cleans caches automatically
+- Prevents phone from freezing
+- Frees up disk space
 
 ---
 
 ## Uninstall
 
 ```bash
-./uninstall.sh
-# or
 rm -rf ~/.owura ~/.local/bin/owura
 ```
 
@@ -197,18 +141,17 @@ rm -rf ~/.owura ~/.local/bin/owura
 
 ## License
 
-Apache License 2.0 - See [LICENSE](LICENSE)
+Apache License 2.0
 
 ---
 
 ## Contributing
 
 1. Fork the repo
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create a branch
+3. Make your changes
+4. Submit a pull request
 
 ---
 
-**OWURA** - *Code Anywhere. Anytime. Permanently.*
+**OWURA** - Code Anywhere. Anytime.
