@@ -1,7 +1,7 @@
 #!/data/data/com.termux/files/usr/bin/bash
 
-# Mobile Companion APK Builder
-# This script builds the APK in Termux without Android Studio
+# OWURA APK Builder
+# Build your AI coding agent in Termux
 
 set -e
 
@@ -12,16 +12,19 @@ RES_DIR="$APP_DIR/res"
 MANIFEST="$APP_DIR/AndroidManifest.xml"
 
 echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—"
-echo "â•‘     Mobile Companion APK Builder                â•‘"
+echo "â•‘         OWURA APK Builder                       â•‘"
 echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
 echo ""
 
 # Check for required tools
 echo "[1/8] Checking dependencies..."
-for cmd in java kotlinc aapt d8 apksigner; do
+for cmd in java kotlinc aapt d8 apksigner keytool; do
     if ! command -v $cmd &> /dev/null; then
-        echo "Error: $cmd not found. Run: pkg install $cmd"
-        exit 1
+        echo "Installing $cmd..."
+        pkg install -y $cmd 2>/dev/null || {
+            echo "Error: $cmd not found. Install manually: pkg install $cmd"
+            exit 1
+        }
     fi
 done
 
@@ -60,25 +63,25 @@ aapt package -f \
     -M "$MANIFEST" \
     -S "$RES_DIR" \
     -I "$ANDROID_HOME/platforms/android-34/android.jar" \
-    -F "$BUILD_DIR/mobile-companion-unsigned.apk"
+    -F "$BUILD_DIR/owura-unsigned.apk"
 
 # Add DEX to APK
 cd "$BUILD_DIR/dex"
-aapt add "$BUILD_DIR/mobile-companion-unsigned.apk" classes.dex
+aapt add "$BUILD_DIR/owura-unsigned.apk" classes.dex
 cd "$APP_DIR"
 
 # Generate keystore (if not exists)
-if [ ! -f "$BUILD_DIR/keystore.jks" ]; then
+if [ ! -f "$BUILD_DIR/owura.jks" ]; then
     echo "[7/8] Generating signing key..."
     keytool -genkey -v \
-        -keystore "$BUILD_DIR/keystore.jks" \
-        -alias mobilecompanion \
+        -keystore "$BUILD_DIR/owura.jks" \
+        -alias owura \
         -keyalg RSA \
         -keysize 2048 \
         -validity 10000 \
-        -storepass android \
-        -keypass android \
-        -dname "CN=Mobile Companion, OU=AI, O=MobileCompanion, L=Unknown, ST=Unknown, C=US"
+        -storepass owura2024 \
+        -keypass owura2024 \
+        -dname "CN=OWURA, OU=AI, O=OWURA Agent, L=Mobile, ST=Global, C=US"
 else
     echo "[7/8] Using existing keystore..."
 fi
@@ -86,26 +89,25 @@ fi
 # Sign APK
 echo "[8/8] Signing APK..."
 apksigner sign \
-    --ks "$BUILD_DIR/keystore.jks" \
-    --ks-key-alias mobilecompanion \
-    --ks-pass pass:android \
-    --key-pass pass:android \
-    --out "$BUILD_DIR/mobile-companion.apk" \
-    "$BUILD_DIR/mobile-companion-unsigned.apk"
+    --ks "$BUILD_DIR/owura.jks" \
+    --ks-key-alias owura \
+    --ks-pass pass:owura2024 \
+    --key-pass pass:owura2024 \
+    --out "$BUILD_DIR/owura.apk" \
+    "$BUILD_DIR/owura-unsigned.apk"
 
-# Copy to home directory
-cp "$BUILD_DIR/mobile-companion.apk" "$HOME/mobile-companion.apk"
+# Copy to home directory and sdcard
+cp "$BUILD_DIR/owura.apk" "$HOME/owura.apk"
+cp "$BUILD_DIR/owura.apk" "/sdcard/owura/owura.apk"
+
 
 echo ""
 echo "â•”â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•—"
 echo "â•‘           BUILD SUCCESSFUL!                     â•‘"
 echo "â•šâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•"
 echo ""
-echo "APK location: $HOME/mobile-companion.apk"
+echo "APK: $HOME/owura.apk"
 echo ""
-echo "To install:"
-echo "  pkg install aapt"
-echo "  aapt install $HOME/mobile-companion.apk"
-echo ""
-echo "Or transfer to your phone and install manually."
+echo "Install:"
+echo "  aapt install $HOME/owura.apk"
 echo ""
