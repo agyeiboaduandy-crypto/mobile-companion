@@ -43,6 +43,7 @@ except ImportError:
 
 from owura.skills import SKILLS, MCP_SERVERS, get_skill_help, get_mcp_help, get_skill_context
 from owura.memory import get_memory
+from owura.compactor import get_compactor
 
 # ============================================================
 # CONFIGURATION
@@ -311,6 +312,7 @@ class CommandProcessor:
         self.config = config
         self.ai = ai
         self.memory = get_memory()
+        self.compactor = get_compactor()
         self.history = []
     
     def process(self, user_input):
@@ -354,6 +356,9 @@ class CommandProcessor:
             "/learn": self.cmd_learn,
             "/suggest": self.cmd_suggest,
             "/template": self.cmd_template,
+            "/compact": self.cmd_compact,
+            "/status": self.cmd_status,
+            "/clean": self.cmd_clean,
             "/version": self.cmd_version,
             "/quit": self.cmd_quit,
             "/exit": self.cmd_quit,
@@ -411,6 +416,13 @@ class CommandProcessor:
 | `/mcp` | List MCP servers |
 | `/suggest` | Get smart suggestions |
 | `/template <type>` | Get project template |
+
+### System Management
+| Command | Description |
+|---------|-------------|
+| `/status` | Show system status |
+| `/compact` | Run full compaction |
+| `/clean` | Quick cache cleanup |
 
 ### History
 | Command | Description |
@@ -498,6 +510,9 @@ class CommandProcessor:
     def cmd_run(self, args):
         if not args:
             return "Usage: /run <command>"
+        
+        # Auto-compact before heavy operations
+        self.compactor.auto_compact(threshold_percent=85)
         
         try:
             result = subprocess.run(
@@ -781,6 +796,68 @@ if __name__ == "__main__":
         
         name = Prompt.ask("Project name")
         return f"```{args}\n{templates[args].format(name=name)}\n```"
+    
+    def cmd_compact(self, args):
+        """Run full system compaction."""
+        console.print("[yellow]Running full compaction...[/yellow]")
+        
+        # Auto-compact before heavy operations
+        with console.status("[muted]Cleaning caches and optimizing...[/muted]"):
+            result = self.compactor.full_compaction()
+        
+        # Display results
+        table = Table(title="Compaction Complete", show_header=True, header_style="bold green")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Before", style="yellow")
+        table.add_column("After", style="green")
+        
+        table.add_row(
+            "Disk Used",
+            f"{result['disk_before']['used_gb']}GB ({result['disk_before']['percent_used']}%)",
+            f"{result['disk_after']['used_gb']}GB ({result['disk_after']['percent_used']}%)"
+        )
+        table.add_row(
+            "Memory Used",
+            f"{result['memory_before']['used_mb']}MB ({result['memory_before']['percent_used']}%)",
+            f"{result['memory_after']['used_mb']}MB ({result['memory_after']['percent_used']}%)"
+        )
+        table.add_row(
+            "Disk Freed",
+            f"{result['disk_freed_gb']}GB",
+            "âœ“"
+        )
+        
+        console.print(table)
+        
+        # Show what was cleaned
+        if result['cleaned']:
+            console.print("\n[bold]Cleaned:[/bold]")
+            for source, size in result['cleaned'].items():
+                if size and size > 0:
+                    console.print(f"  âœ“ {source}: {self.compactor._format_size(size)}")
+        
+        return None
+    
+    def cmd_status(self, args):
+        """Show system status."""
+        status = self.compactor.get_status()
+        return status
+    
+    def cmd_clean(self, args):
+        """Quick cache cleanup."""
+        console.print("[yellow]Quick cleanup...[/yellow]")
+        
+        with console.status("[muted]Cleaning...[/muted]"):
+            # Quick cleanup
+            self.compactor.cleanup_pip()
+            self.compactor.cleanup_npm()
+            self.compactor.cleanup_temp()
+            self.compactor.cleanup_pycache()
+        
+        disk = self.compactor.get_disk_usage()
+        console.print(f"[green]Done! Disk: {disk['free_gb']}GB free ({disk['percent_used']}% used)[/green]")
+        
+        return None
     
     def cmd_version(self, args):
         from owura import __version__
