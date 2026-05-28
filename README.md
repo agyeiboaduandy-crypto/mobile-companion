@@ -1,93 +1,214 @@
-# ðŸŒŒ OWURA: The AI Coding Agent for Mobile
+# ðŸŒŒ OWURA
 
-**Code Anywhere. Anytime. Permanently.**
+**AI Coding Agent for Mobile Terminal**
 
-OWURA is not just an appâ€”it's a professional-grade development ecosystem that transforms your Android device into a powerful AI-driven coding station. By leveraging a unique bridge between a native Android interface and the Termux Linux environment, OWURA provides a seamless, high-performance experience for developers who refuse to be tied to a laptop.
-
-![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
-![Platform](https://img.shields.io/badge/Platform-Android%20%2F%20Termux-green.svg)
-![Agent](https://img.shields.io/badge/Agent-OWURA_v1.0-neon)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.8+-green.svg)](https://www.python.org/)
+[![Platform](https://img.shields.io/badge/Platform-Termux%20%2F%20Linux-yellow.svg)](https://termux.dev/)
 
 ---
 
-## ðŸš€ The Vision
+## What is OWURA?
 
-Most "mobile IDEs" are just text editors with a few plugins. **OWURA is different.** It is a lightweight version of a full AI coding agent (like opencode) optimized specifically for the constraints and strengths of mobile devices.
+OWURA is a **living, learning AI coding assistant** that runs in your terminal. It's designed for developers who want to code anywhere, anytime - especially on mobile devices using Termux.
 
-OWURA creates a "Cyber-Cockpit" on your phone, connecting you to the world's most powerful LLMs and giving you a real Linux shell to execute, test, and deploy your code.
-
-## âœ¨ Key Features
-
-### ðŸ§  Intelligent Model Routing
-OWURA doesn't lock you into one AI. It automatically detects and routes your requests to the best available provider based on your API keys:
-- **Google AI Studio (Gemini 1.5 Pro)**: For deep reasoning and massive context.
-- **Groq (Llama 3)**: For near-instantaneous code generation.
-- **NVIDIA NIM**: For high-performance specialized models.
-- **Ollama**: For local, private AI execution on your own hardware.
-
-### ðŸ› ï¸ The Professional Toolchain
-- **Full Linux Backend**: Powered by Termux, giving you access to `git`, `node`, `python`, `rust`, `go`, and more.
-- **MCP (Model Context Protocol)**: Integrated filesystem and GitHub servers that allow the AI to actually *read and write* your files and *manage your repos*.
-- **GitHub Synchronization**: Push your professional work to the cloud directly from your pocket.
-- **Native Android Bridge**: A custom APK that manages your environment and launches your agent with a single tap.
-
-### ðŸŽ­ Agent Modes
-OWURA adapts to your current workflow:
-- `[ARCHITECT]`: Focuses on system design, file structure, and planning.
-- `[CODER]`: Optimized for raw implementation, refactoring, and speed.
-- `[SENTRY]`: Dedicated to debugging, security audits, and error hunting.
+Unlike basic AI chatbots, OWURA:
+- **Learns from every interaction** - remembers what worked and what didn't
+- **Stores project context** - knows about your past projects and preferences
+- **Has built-in skills** - 12+ coding skills ready to use
+- **Connects to MCP servers** - Context7, GitHub, PyPI, npm, and more
+- **Works offline** - your data stays on your device
 
 ---
 
-## ðŸ“¦ Installation
-
-### 1. Prerequisites
-- **Android Device**
-- **Termux** (Install from [F-Droid](https://f-droid.org/en/packages/com.termux/))
-- **Termux:API** (Install from [F-Droid](https://f-droid.org/en/packages/com.termux.api/))
-
-### 2. One-Click Setup
-Run this command in Termux to deploy the entire OWURA ecosystem:
+## Quick Install
 
 ```bash
-curl -sL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/scripts/bootstrap.sh | bash
+# One-click install
+curl -sSL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/install.sh | bash
+
+# Or manually
+git clone https://github.com/agyeiboaduandy-crypto/owura.git
+cd owura
+chmod +x install.sh
+./install.sh
 ```
 
-### 3. Configure Your Brain
-Set your API keys using the built-in manager:
-```bash
-owura-keys set GOOGLE_AI_STUDIO_KEY your_key_here
-owura-keys set GROQ_API_KEY your_key_here
-```
-
-### 4. Launch the Agent
+Then run:
 ```bash
 owura
 ```
 
 ---
 
-## ðŸ“± The Companion APK
+## Features
 
-The OWURA APK is the control center for your agent. It handles:
-- **Onboarding**: Guides you through the Termux installation.
-- **Key Management**: Securely stores your API tokens.
-- **Model Scanner**: Lists all models available from your providers.
-- **Quick-Launch**: Bypasses the terminal setup and jumps straight into coding.
+### ðŸ§  Persistent Memory
+OWURA remembers everything:
+- Facts and preferences
+- Project details
+- Code patterns that work
+- Errors and their solutions
 
-**To build the APK on your laptop:**
+### ðŸ› ï¸ Built-in Skills
+| Skill | Description |
+|-------|-------------|
+| `web-search` | Search documentation and examples |
+| `file-operations` | Create, read, update files |
+| `git-operations` | Version control |
+| `python-dev` | Python development |
+| `nodejs-dev` | Node.js development |
+| `shell-scripting` | Bash scripting |
+| `api-integration` | Connect to APIs |
+| `database` | SQL and NoSQL |
+| `docker` | Container management |
+| `security` | Secure coding |
+| `testing` | Test and debug |
+| `deployment` | Deploy apps |
+
+### ðŸ”Œ MCP Servers
+- **Context7** - Up-to-date documentation
+- **GitHub** - Repos, issues, code search
+- **PyPI** - Python packages
+- **npm** - Node.js packages
+- **StackOverflow** - Find solutions
+- **DevDocs** - Developer documentation
+
+### ðŸ“ Commands
+
+| Command | Description |
+|---------|-------------|
+| `/help` | Show all commands |
+| `/config` | View configuration |
+| `/provider <name>` | Set AI provider |
+| `/key <api_key>` | Set API key |
+| `/run <cmd>` | Execute command |
+| `/memory` | View memory stats |
+| `/remember <fact>` | Store a fact |
+| `/recall <query>` | Search memory |
+| `/project <name>` | Record project |
+| `/skills` | List skills |
+| `/mcp` | List MCP servers |
+| `/suggest` | Get suggestions |
+| `/template <type>` | Get template |
+| `/quit` | Exit |
+
+---
+
+## Configuration
+
+### Providers
+- **Gemini** (free tier available) - Get key at [AI Studio](https://aistudio.google.com/apikey)
+- **OpenAI** - Get key at [OpenAI](https://platform.openai.com/api-keys)
+- **Groq** - Get key at [Groq](https://console.groq.com/keys)
+
+### First Run
 ```bash
-cd owura-android
-./gradlew assembleDebug
-adb install app/build/outputs/apk/debug/app-debug.apk
+owura
+# Follow the prompts to set your provider and API key
+```
+
+### Change Provider
+```
+/provider gemini
+/key your-api-key-here
 ```
 
 ---
 
-## ðŸ“œ License
+## Memory System
 
-Distributed under the **Apache License 2.0**. See `LICENSE` for more information.
+OWURA learns automatically:
+- **Code patterns** - remembers successful commands
+- **Errors & solutions** - learns from debugging
+- **User preferences** - adapts to your style
+- **Project context** - tracks your projects
+
+### Manual Memory
+```
+/remember Python 3.12 has new type hints
+/recall python
+/project myapp --record a new project
+/learn pip install breaks on arm64 -> use --platform flag
+```
 
 ---
 
-**OWURA** â€” *Because the world doesn't stop coding just because your laptop is closed.*
+## Project Structure
+
+```
+owura/
+â”œâ”€â”€ owura/
+â”‚   â”œâ”€â”€ __init__.py      # Package init
+â”‚   â”œâ”€â”€ __main__.py      # Entry point
+â”‚   â”œâ”€â”€ app.py           # Main application
+â”‚   â”œâ”€â”€ skills.py        # Built-in skills
+â”‚   â””â”€â”€ memory.py        # Memory system
+â”œâ”€â”€ install.sh           # Installer
+â”œâ”€â”€ uninstall.sh         # Uninstaller
+â”œâ”€â”€ requirements.txt     # Dependencies
+â”œâ”€â”€ setup.py            # Package setup
+â””â”€â”€ README.md           # This file
+```
+
+---
+
+## Usage Examples
+
+### Chat with AI
+```
+owura> Write a Python function to sort a list
+owura> How do I connect to PostgreSQL?
+owura> Debug this code: [paste code]
+```
+
+### Execute Commands
+```
+/ls
+/pwd
+/run python3 script.py
+/git status
+```
+
+### Memory
+```
+/recall python
+/memory
+/remember Use virtual environments always
+```
+
+### Skills
+```
+/skills
+/web-search how to use async await in Python
+```
+
+---
+
+## Uninstall
+
+```bash
+./uninstall.sh
+# or
+rm -rf ~/.owura ~/.local/bin/owura
+```
+
+---
+
+## License
+
+Apache License 2.0 - See [LICENSE](LICENSE)
+
+---
+
+## Contributing
+
+1. Fork the repo
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+---
+
+**OWURA** - *Code Anywhere. Anytime. Permanently.*
