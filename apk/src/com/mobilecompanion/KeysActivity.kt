@@ -1,4 +1,4 @@
-package com.mobilecompanion
+package com.owura.agent
 
 import android.os.Bundle
 import android.widget.Button
@@ -16,7 +16,7 @@ class KeysActivity : AppCompatActivity() {
     private lateinit var ollamaHost: EditText
     private lateinit var statusText: TextView
 
-    private val envFile by lazy { File(filesDir.parentFile, "mobile-companion.env") }
+    private val envFile by lazy { File(filesDir.parentFile, "owura.env") }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
