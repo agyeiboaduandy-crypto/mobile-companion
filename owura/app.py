@@ -111,6 +111,7 @@ class AIProvider:
     def chat(self, message, context=None):
         provider = self.config.get("provider")
         api_key = self.config.get("api_key")
+        base_url = self.config.get("base_url", "")
         
         if not api_key:
             console.print("[error]No API key configured. Use '/key' to set one.[/error]")
@@ -134,10 +135,14 @@ class AIProvider:
         
         if provider == "gemini":
             return self._gemini_chat(message, api_key, system_prompt)
+        elif provider == "custom" or base_url:
+            return self._custom_openai_chat(message, api_key, system_prompt, base_url)
         elif provider == "openai":
             return self._openai_chat(message, api_key, system_prompt)
         elif provider == "groq":
             return self._groq_chat(message, api_key, system_prompt)
+        elif provider == "nvidia":
+            return self._nvidia_chat(message, api_key, system_prompt)
         else:
             console.print(f"[error]Unknown provider: {provider}[/error]")
             return None
@@ -197,7 +202,144 @@ You are optimized for mobile terminal use on Android via Termux.
                 result = json.loads(response.read().decode())
                 response_text = result["candidates"][0]["content"]["parts"][0]["text"]
                 
-                # Auto-learn from conversation
+                if self.config.get("auto_learn"):
+                    self._auto_learn(message, response_text)
+                
+                return response_text
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def _openai_chat(self, message, api_key, system_prompt):
+        import urllib.request
+        
+        model = self.config.get("model", "gpt-4")
+        url = "https://api.openai.com/v1/chat/completions"
+        
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            "max_tokens": 4096,
+        }
+        
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        })
+        
+        try:
+            with urllib.request.urlopen(req, timeout=60) as response:
+                result = json.loads(response.read().decode())
+                response_text = result["choices"][0]["message"]["content"]
+                
+                if self.config.get("auto_learn"):
+                    self._auto_learn(message, response_text)
+                
+                return response_text
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def _groq_chat(self, message, api_key, system_prompt):
+        import urllib.request
+        
+        model = self.config.get("model", "llama3-70b-8192")
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            "max_tokens": 4096,
+        }
+        
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        })
+        
+        try:
+            with urllib.request.urlopen(req, timeout=60) as response:
+                result = json.loads(response.read().decode())
+                response_text = result["choices"][0]["message"]["content"]
+                
+                if self.config.get("auto_learn"):
+                    self._auto_learn(message, response_text)
+                
+                return response_text
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def _nvidia_chat(self, message, api_key, system_prompt):
+        import urllib.request
+        
+        model = self.config.get("model", "meta/llama-3.1-70b-instruct")
+        url = "https://integrate.api.nvidia.com/v1/chat/completions"
+        
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            "max_tokens": 4096,
+            "temperature": 0.7,
+        }
+        
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(url, data=data, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        })
+        
+        try:
+            with urllib.request.urlopen(req, timeout=60) as response:
+                result = json.loads(response.read().decode())
+                response_text = result["choices"][0]["message"]["content"]
+                
+                if self.config.get("auto_learn"):
+                    self._auto_learn(message, response_text)
+                
+                return response_text
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    def _custom_openai_chat(self, message, api_key, system_prompt, base_url):
+        """Universal OpenAI-compatible API chat. Works with ANY provider."""
+        import urllib.request
+        
+        model = self.config.get("model", "default")
+        
+        # Ensure base_url ends with /chat/completions
+        if not base_url.endswith("/chat/completions"):
+            base_url = base_url.rstrip("/") + "/chat/completions"
+        
+        payload = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            "max_tokens": 4096,
+            "temperature": 0.7,
+        }
+        
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(base_url, data=data, headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        })
+        
+        try:
+            with urllib.request.urlopen(req, timeout=60) as response:
+                result = json.loads(response.read().decode())
+                response_text = result["choices"][0]["message"]["content"]
+                
                 if self.config.get("auto_learn"):
                     self._auto_learn(message, response_text)
                 
@@ -454,22 +596,57 @@ class CommandProcessor:
     
     def cmd_provider(self, args):
         if not args:
-            return f"Current provider: {self.config.get('provider')}\nAvailable: gemini, openai, groq"
+            return """Available providers:
+
+  gemini   - Google AI Studio (free tier)
+  openai   - OpenAI
+  groq     - Groq (fast inference)
+  nvidia   - NVIDIA NIM
+  custom   - Any OpenAI-compatible API
+
+Usage:
+  /provider gemini
+  /provider custom https://api.example.com/v1
+  /provider custom https://api.together.xyz/v1
+
+Supported OpenAI-compatible APIs:
+  - OpenRouter (https://openrouter.ai/api/v1)
+  - Together AI (https://api.together.xyz/v1)
+  - Fireworks (https://api.fireworks.ai/inference/v1)
+  - DeepInfra (https://api.deepinfra.com/v1/openai)
+  - Groq (https://api.groq.com/openai/v1)
+  - NVIDIA NIM (https://integrate.api.nvidia.com/v1)
+  - Any local LLM (http://localhost:11434/v1)"""
         
-        valid = ["gemini", "openai", "groq"]
-        if args not in valid:
+        parts = args.split(maxsplit=1)
+        provider = parts[0].lower()
+        base_url = parts[1] if len(parts) > 1 else ""
+        
+        valid = ["gemini", "openai", "groq", "nvidia", "custom"]
+        if provider not in valid:
             return f"Invalid provider. Choose from: {', '.join(valid)}"
         
-        self.config.set("provider", args)
+        if provider == "custom" and not base_url:
+            return "Usage: /provider custom <base_url>\nExample: /provider custom https://api.together.xyz/v1"
+        
+        self.config.set("provider", provider)
+        if base_url:
+            self.config.set("base_url", base_url)
         
         defaults = {
             "gemini": "gemini-2.0-flash",
             "openai": "gpt-4",
             "groq": "llama3-70b-8192",
+            "nvidia": "meta/llama-3.1-70b-instruct",
+            "custom": "default",
         }
-        self.config.set("model", defaults.get(args, "default"))
+        self.config.set("model", defaults.get(provider, "default"))
         
-        return f"Provider set to {args}. Model: {self.config.get('model')}"
+        self.memory.set_preference("provider", provider)
+        
+        if provider == "custom":
+            return f"Custom provider set!\nBase URL: {base_url}\nModel: default\n\nUse /model <name> to set the model."
+        return f"Provider set to {provider}. Model: {self.config.get('model')}"
     
     def cmd_model(self, args):
         if not args:
