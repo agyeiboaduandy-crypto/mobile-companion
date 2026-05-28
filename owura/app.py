@@ -46,6 +46,7 @@ from owura.memory import get_memory
 from owura.compactor import get_compactor
 from owura.security import get_security
 from owura.pro import get_pro_tools
+from owura.creative import get_creative
 
 # ============================================================
 # CONFIGURATION
@@ -556,6 +557,17 @@ class CommandProcessor:
             "/generate": self.cmd_generate,
             "/deploy": self.cmd_deploy,
             "/test": self.cmd_test,
+            "/error": self.cmd_error,
+            "/save": self.cmd_save,
+            "/snippets": self.cmd_snippets,
+            "/commit": self.cmd_commit,
+            "/api": self.cmd_api,
+            "/usage": self.cmd_usage,
+            "/json": self.cmd_json,
+            "/regex": self.cmd_regex,
+            "/color": self.cmd_color,
+            "/sysinfo": self.cmd_sysinfo,
+            "/ascii": self.cmd_ascii,
             "/version": self.cmd_version,
             "/quit": self.cmd_quit,
             "/exit": self.cmd_quit,
@@ -1233,6 +1245,112 @@ if __name__ == "__main__":
             return "Tests timed out (60s limit)"
         except Exception as e:
             return f"Error: {str(e)}"
+    
+    def cmd_error(self, args):
+        """Decode an error message."""
+        creative = get_creative()
+        
+        if not args:
+            return "Usage: /error <error_message>\n\nPaste any error message and get instant solution."
+        
+        return creative.decode_error(args)
+    
+    def cmd_save(self, args):
+        """Save a code snippet."""
+        creative = get_creative()
+        
+        if not args:
+            return "Usage: /save <name>\n\nSaves the last code block you ran."
+        
+        # For now, save a placeholder
+        creative.save_snippet(args, "# Your code here", "python", [])
+        return f"Snippet '{args}' saved! Use /snippets to view all."
+    
+    def cmd_snippets(self, args):
+        """List saved snippets."""
+        creative = get_creative()
+        return creative.list_snippets()
+    
+    def cmd_commit(self, args):
+        """Generate smart git commit message."""
+        creative = get_creative()
+        message = creative.generate_commit_message()
+        console.print(f"[bold]Suggested commit message:[/bold]")
+        console.print(f"[green]{message}[/green]")
+        
+        if Confirm.ask("Use this message?"):
+            return self.cmd_run(f'git commit -m "{message}"')
+        return None
+    
+    def cmd_api(self, args):
+        """Test an API endpoint."""
+        creative = get_creative()
+        
+        if not args:
+            return """Usage: /api <method> <url> [data]
+
+Examples:
+/api GET https://api.github.com/users/octocat
+/api POST https://httpbin.org/post {"key": "value"}
+/api GET http://localhost:8000/api/health"""
+        
+        parts = args.split(maxsplit=2)
+        method = parts[0].upper()
+        url = parts[1] if len(parts) > 1 else ""
+        data = parts[2] if len(parts) > 2 else None
+        
+        if not url:
+            return "Usage: /api <method> <url>"
+        
+        return creative.test_api(method, url, data)
+    
+    def cmd_usage(self, args):
+        """Show API usage statistics."""
+        creative = get_creative()
+        return creative.get_usage_stats()
+    
+    def cmd_json(self, args):
+        """Format and validate JSON."""
+        creative = get_creative()
+        
+        if not args:
+            return "Usage: /json <json_string>\n\nPaste JSON to format and validate."
+        
+        return creative.format_json(args)
+    
+    def cmd_regex(self, args):
+        """Test a regex pattern."""
+        creative = get_creative()
+        
+        if not args:
+            return "Usage: /regex <pattern> <text>\n\nExample: /regex \\d+ \"I have 3 cats and 5 dogs\""
+        
+        parts = args.split(maxsplit=1)
+        pattern = parts[0]
+        text = parts[1] if len(parts) > 1 else ""
+        
+        return creative.test_regex(pattern, text)
+    
+    def cmd_color(self, args):
+        """Convert color formats."""
+        creative = get_creative()
+        
+        if not args:
+            return "Usage: /color <hex_or_rgb>\n\nExamples:\n/color #FF5733\n/color rgb(255, 87, 51)"
+        
+        return creative.convert_color(args)
+    
+    def cmd_sysinfo(self, args):
+        """Show system information."""
+        creative = get_creative()
+        return creative.get_system_info()
+    
+    def cmd_ascii(self, args):
+        """Show ASCII art."""
+        creative = get_creative()
+        art = creative.get_ascii_art(args or "owura")
+        console.print(art, style="cyan")
+        return None
     
     def cmd_version(self, args):
         from owura import __version__
