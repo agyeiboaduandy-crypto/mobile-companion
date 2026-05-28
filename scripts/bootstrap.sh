@@ -159,15 +159,16 @@ cat > "$INSTALL_DIR/scripts/config.sh" << 'CONFIG'
 if [ -f "$HOME/.owura.env" ]; then
     export $(grep -v '^#' "$HOME/.owura.env" | xargs)
 fi
-alias owura='bash ~/owura/scripts/owura.sh'
+alias owura='bash ~/owura/scripts/owura-agent.sh'
 alias owura-setup='bash ~/owura/scripts/setup.sh'
 alias owura-keys='bash ~/owura/scripts/keys.sh'
 alias owura-models='cat ~/.owura-models'
 alias owura-update-models='bash ~/owura/scripts/models.sh'
 alias owura-github='bash ~/owura/scripts/github.sh'
-alias owura-open='opencode'
+alias owura-open='bash ~/owura/scripts/owura-agent.sh'
 echo "OWURA aliases loaded. Type 'owura' to start."
 CONFIG
+
 
 cat > "$INSTALL_DIR/scripts/owura.sh" << 'OWURA'
 #!/data/data/com.termux/files/usr/bin/bash
