@@ -49,6 +49,7 @@ from owura.pro import get_pro_tools
 from owura.creative import get_creative
 from owura.web import get_web
 from owura.smart import get_smart
+from owura.loophole import get_loophole
 
 # ============================================================
 # CONFIGURATION
@@ -597,6 +598,9 @@ class CommandProcessor:
             "/review": self.cmd_review,
             "/optimize": self.cmd_optimize,
             "/reverse": self.cmd_reverse,
+            "/loophole": self.cmd_loophole,
+            "/fix": self.cmd_fix,
+            "/free": self.cmd_free,
             "/version": self.cmd_version,
             "/quit": self.cmd_quit,
             "/exit": self.cmd_quit,
@@ -1534,6 +1538,51 @@ Auto-detects when you say "explain this code" in chat."""
         context = parts[1] if len(parts) > 1 else "code"
         
         return smart.reverse_engineer(target, context)
+    
+    def cmd_loophole(self, args):
+        """Find loopholes and workarounds."""
+        loophole = get_loophole()
+        
+        if not args:
+            return """Usage: /loophole <problem description>
+
+Examples:
+/loophole API rate limit blocks my scraper
+/loophole Can't install package due to permission error
+/loophole Service is paid but I need free access
+
+Auto-detects when you say "this is impossible" or "no way to do this" in chat."""
+        
+        return loophole.find_loopholes(args)
+    
+    def cmd_fix(self, args):
+        """Fix 'impossible' problems."""
+        loophole = get_loophole()
+        
+        if not args:
+            return """Usage: /fix <problem>
+
+Example:
+/fix I can't access the database from outside network
+
+Auto-detects when you say "impossible" or "can't be done" in chat."""
+        
+        return loophole.fix_impossible(args)
+    
+    def cmd_free(self, args):
+        """Find free alternatives to paid tools."""
+        loophole = get_loophole()
+        
+        if not args:
+            return """Usage: /free <paid_tool>
+
+Example:
+/free GitHub Copilot
+/free JetBrains IDE
+
+Returns free alternatives."""
+        
+        return loophole.find_free_alternative(args)
     
     def cmd_version(self, args):
         from owura import __version__
