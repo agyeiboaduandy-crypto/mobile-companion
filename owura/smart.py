@@ -467,9 +467,19 @@ class SmartSkills:
             return "optimize"
         
         # Reverse engineer keywords
-        reverse_keywords = ["reverse", "explain", "decompile", "analyze", "understand"]
+        reverse_keywords = ["reverse", "explain", "decompile", "understand", "how does this work"]
         if any(kw in input_lower for kw in reverse_keywords):
             return "reverse"
+        
+        # Loophole keywords
+        loophole_keywords = ["loophole", "workaround", "impossible", "can't", "no way", "blocked", "forbidden", "denied", "bypass"]
+        if any(kw in input_lower for kw in loophole_keywords):
+            return "loophole"
+        
+        # Fix impossible keywords
+        fix_keywords = ["fix impossible", "make it work", "find a way", "creative solution"]
+        if any(kw in input_lower for kw in fix_keywords):
+            return "fix"
         
         return None
     
@@ -490,6 +500,16 @@ class SmartSkills:
         
         elif skill == "reverse":
             return self.reverse_engineer(user_input, "code")
+        
+        elif skill == "loophole":
+            from owura.loophole import get_loophole
+            loophole = get_loophole()
+            return loophole.find_loopholes(user_input)
+        
+        elif skill == "fix":
+            from owura.loophole import get_loophole
+            loophole = get_loophole()
+            return loophole.fix_impossible(user_input)
         
         return None
 
