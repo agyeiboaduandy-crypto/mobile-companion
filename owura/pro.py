@@ -395,7 +395,7 @@ setup(
     
     def _go_api(self, path: Path, name: str):
         """Create Go API project."""
-        (path / "main.go").write_text(f'''package main
+        (path / "main.go").write_text('''package main
 
 import (
     "encoding/json"
@@ -411,7 +411,7 @@ type Response struct {
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
     w.Header().Set("Content-Type", "application/json")
-    json.NewEncoder(w).Encode(Response{Name: "{name}", Status: "running"})
+    json.NewEncoder(w).Encode(Response{Name: "PROJECT_NAME", Status: "running"})
 }
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
@@ -419,14 +419,14 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(Response{Status: "healthy"})
 }
 
-func main() {{
+func main() {
     http.HandleFunc("/", homeHandler)
     http.HandleFunc("/api/health", healthHandler)
     
     fmt.Println("Server running on :8080")
     log.Fatal(http.ListenAndServe(":8080", nil))
-}}
-''')
+}
+'''.replace("PROJECT_NAME", name))
         
         (path / "go.mod").write_text(f"module {name}\n\ngo 1.21\n")
         (path / "README.md").write_text(f"# {name}\n\nGo API project\n\n## Setup\n\n```bash\ngo run main.go\n```\n")
