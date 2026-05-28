@@ -60,12 +60,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openTermux() {
-        val intent = packageManager.getLaunchIntentForPackage("com.termux")
-        if (intent != null) {
-            startActivity(intent)
-        } else {
-            statusText.text = "Termux not installed!"
-            statusText.setTextColor(getColor(R.color.red))
-        }
+        val intent = Intent()
+        intent.setClassName("com.termux", "com.termux.app.RunCommandService")
+        intent.setAction("com.termux.service.execute")
+        intent.putExtra("com.termux.execute.arguments", arrayOf("bash ~/owura/scripts/owura-agent.sh"))
+        startService(intent)
     }
 }
