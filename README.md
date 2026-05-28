@@ -31,6 +31,7 @@ curl -sSL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/ins
 Then start it:
 
 ```bash
+source ~/.bashrc
 owura
 ```
 
@@ -53,10 +54,10 @@ owura> Debug this code: [paste code]
 ### Run Commands
 
 ```
-/ls                    # List files
-/pwd                   # Show current directory
-/run python3 app.py    # Run a command
-/git status            # Git commands
+/run ls                    # List files
+/pwd                       # Show current directory
+/run python3 app.py        # Run a command
+/git status                # Git commands
 ```
 
 ### Memory System
@@ -75,12 +76,40 @@ owura> Debug this code: [paste code]
 /clean     # Quick cleanup
 ```
 
+### Smart Skills
+
+```
+/review def foo(): pass    # Review code quality
+/optimize for i in ...     # Optimize performance
+/loophole rate limit       # Find workarounds
+```
+
+### Web Tools
+
+```
+/search python async       # Search the web
+/github python scraper     # Search GitHub
+/pypi requests             # Search Python packages
+/weather London            # Get weather
+```
+
+### Creative Features
+
+```
+/story recursion           # Learn as stories
+/metaphor database         # Understand with metaphors
+/challenge easy            # Get coding challenges
+/wisdom                    # Programming wisdom
+```
+
 ### Get Help
 
 ```
 /help      # Show all commands
 /skills    # List coding skills
 /mcp       # List connected services
+/who       # Learn about OWURA
+/mission   # See our mission
 ```
 
 ---
@@ -97,6 +126,10 @@ owura> Debug this code: [paste code]
 | `/memory` | View memory stats |
 | `/compact` | Clean caches |
 | `/status` | System status |
+| `/review` | Review code quality |
+| `/optimize` | Optimize code |
+| `/loophole` | Find workarounds |
+| `/search` | Search the web |
 | `/quit` | Exit OWURA |
 
 ---
@@ -118,16 +151,28 @@ owura> Debug this code: [paste code]
 - Docker
 - Security best practices
 
-### MCP Integrations
-- Context7 (documentation)
-- GitHub
-- PyPI / npm
-- StackOverflow
+### Web Tools
+- Search the web
+- GitHub/PyPI/npm search
+- StackOverflow lookup
+- Weather, news, Wikipedia
 
-### Auto-Compaction
-- Cleans caches automatically
-- Prevents phone from freezing
-- Frees up disk space
+### Smart Skills
+- Self-review code
+- Self-optimize performance
+- Find loopholes for impossible problems
+- Reverse engineer code/systems
+
+### Creative Features
+- Storytelling for concepts
+- Code poetry
+- Coding challenges
+- Programming wisdom
+
+### Security
+- Encrypted API keys
+- Privacy-first design
+- Auto-cleanup of caches
 
 ---
 
