@@ -48,6 +48,7 @@ from owura.security import get_security
 from owura.pro import get_pro_tools
 from owura.creative import get_creative
 from owura.web import get_web
+from owura.smart import get_smart
 
 # ============================================================
 # CONFIGURATION
@@ -506,6 +507,7 @@ class CommandProcessor:
         self.ai = ai
         self.memory = get_memory()
         self.compactor = get_compactor()
+        self.smart = get_smart()
         self.history = []
     
     def process(self, user_input):
@@ -513,6 +515,18 @@ class CommandProcessor:
         # Check for commands
         if user_input.startswith("/"):
             return self.handle_command(user_input)
+        
+        # Auto-detect smart skills
+        code = None
+        if "```" in user_input:
+            import re
+            code_match = re.search(r'```[\w]*\n(.*?)```', user_input, re.DOTALL)
+            if code_match:
+                code = code_match.group(1)
+        
+        smart_result = self.smart.handle_auto_skill(user_input, code)
+        if smart_result:
+            return smart_result
         
         # Send to AI
         response = self.ai.chat(user_input)
@@ -580,6 +594,9 @@ class CommandProcessor:
             "/ip": self.cmd_ip,
             "/fetch": self.cmd_fetch,
             "/docs": self.cmd_docs,
+            "/review": self.cmd_review,
+            "/optimize": self.cmd_optimize,
+            "/reverse": self.cmd_reverse,
             "/version": self.cmd_version,
             "/quit": self.cmd_quit,
             "/exit": self.cmd_quit,
@@ -1459,6 +1476,64 @@ Examples:
         docs = parts[1] if len(parts) > 1 else "python"
         
         return web.search_docs(query, docs)
+    
+    def cmd_review(self, args):
+        """Review code quality."""
+        smart = get_smart()
+        
+        if not args:
+            return """Usage: /review <code or file>
+
+Examples:
+/review def foo(): pass
+/review /path/to/file.py
+/review ```python code here```
+
+Auto-detects when you say "review this code" in chat."""
+        
+        # Check if it's a file path
+        if os.path.exists(args):
+            return smart.self_review(file_path=args)
+        
+        return smart.self_review(code=args)
+    
+    def cmd_optimize(self, args):
+        """Optimize code performance."""
+        smart = get_smart()
+        
+        if not args:
+            return """Usage: /optimize <code or file>
+
+Examples:
+/optimize for i in range(len(items)): pass
+/optimize /path/to/file.py
+
+Auto-detects when you say "optimize this code" in chat."""
+        
+        if os.path.exists(args):
+            return smart.self_optimize(file_path=args)
+        
+        return smart.self_optimize(code=args)
+    
+    def cmd_reverse(self, args):
+        """Reverse engineer code or systems."""
+        smart = get_smart()
+        
+        if not args:
+            return """Usage: /reverse <target> [context]
+
+Examples:
+/reverse "def foo(): pass" code
+/reverse https://api.example.com api
+/reverse /path/to/binary binary
+
+Auto-detects when you say "explain this code" in chat."""
+        
+        parts = args.split(maxsplit=1)
+        target = parts[0]
+        context = parts[1] if len(parts) > 1 else "code"
+        
+        return smart.reverse_engineer(target, context)
     
     def cmd_version(self, args):
         from owura import __version__
