@@ -64,7 +64,7 @@ THEME = Theme({
     "info": "cyan",
     "success": "bold green",
     "warning": "bold yellow",
-    "error": "bold red",
+    "error": "red",
     "accent": "bold magenta",
     "muted": "dim",
     "owura": "bold cyan",
