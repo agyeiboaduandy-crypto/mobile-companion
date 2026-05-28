@@ -50,6 +50,8 @@ from owura.creative import get_creative
 from owura.web import get_web
 from owura.smart import get_smart
 from owura.loophole import get_loophole
+from owura.creativity import get_creativity
+from owura.awareness import get_awareness
 
 # ============================================================
 # CONFIGURATION
@@ -517,6 +519,16 @@ class CommandProcessor:
         if user_input.startswith("/"):
             return self.handle_command(user_input)
         
+        # Check for easter eggs
+        creativity = get_creativity()
+        easter_egg = creativity.check_easter_egg(user_input)
+        if easter_egg:
+            return easter_egg
+        
+        # Detect mood and respond appropriately
+        mood = creativity.detect_mood(user_input)
+        mood_response = creativity.get_mood_response(mood)
+        
         # Auto-detect smart skills
         code = None
         if "```" in user_input:
@@ -531,6 +543,11 @@ class CommandProcessor:
         
         # Send to AI
         response = self.ai.chat(user_input)
+        
+        # Add mood response if detected
+        if mood_response:
+            response = f"*{mood_response}*\n\n{response}"
+        
         return response
     
     def handle_command(self, cmd):
@@ -601,6 +618,16 @@ class CommandProcessor:
             "/loophole": self.cmd_loophole,
             "/fix": self.cmd_fix,
             "/free": self.cmd_free,
+            "/story": self.cmd_story,
+            "/metaphor": self.cmd_metaphor,
+            "/name": self.cmd_name,
+            "/poem": self.cmd_poem,
+            "/challenge": self.cmd_challenge,
+            "/wisdom": self.cmd_wisdom,
+            "/mood": self.cmd_mood,
+            "/who": self.cmd_who,
+            "/mission": self.cmd_mission,
+            "/why": self.cmd_why,
             "/version": self.cmd_version,
             "/quit": self.cmd_quit,
             "/exit": self.cmd_quit,
@@ -1584,6 +1611,118 @@ Returns free alternatives."""
         
         return loophole.find_free_alternative(args)
     
+    def cmd_story(self, args):
+        """Tell a coding concept as a story."""
+        creativity = get_creativity()
+        
+        if not args:
+            return """Usage: /story <concept>
+
+Example:
+/story recursion
+/story async
+/story api
+
+Learn coding concepts through stories."""
+        
+        return creativity.tell_story(args)
+    
+    def cmd_metaphor(self, args):
+        """Explain with a metaphor."""
+        creativity = get_creativity()
+        
+        if not args:
+            return """Usage: /metaphor <concept>
+
+Example:
+/metaphor variable
+/metaphor database
+/metaphor loop
+
+Understand concepts through metaphors."""
+        
+        return creativity.generate_metaphor(args)
+    
+    def cmd_name(self, args):
+        """Generate creative names."""
+        creativity = get_creativity()
+        
+        if not args:
+            return """Usage: /name <purpose>
+
+Example:
+/name user authentication
+/name data processing
+/name file handler
+
+Get creative variable/function names."""
+        
+        return creativity.generate_names(args)
+    
+    def cmd_poem(self, args):
+        """Show a code poem."""
+        creativity = get_creativity()
+        lang = args if args in ["python", "javascript"] else "python"
+        return creativity.code_poem(lang)
+    
+    def cmd_challenge(self, args):
+        """Get a coding challenge."""
+        creativity = get_creativity()
+        difficulty = args if args in ["easy", "medium", "hard"] else "easy"
+        return creativity.get_challenge(difficulty)
+    
+    def cmd_wisdom(self, args):
+        """Get programming wisdom."""
+        creativity = get_creativity()
+        return creativity.get_wisdom()
+    
+    def cmd_mood(self, args):
+        """Check current mood or set it."""
+        creativity = get_creativity()
+        return f"""I'm here to help with whatever mood you're in.
+
+**Available moods:** frustrated, confused, excited, bored, tired, neutral
+
+I'll adapt my responses to match. Just talk naturally - I'll detect your mood automatically.
+
+*"Every mood is valid. Every bug is solvable. Every line of code is progress."*
+"""
+    
+    def cmd_who(self, args):
+        """Learn about OWURA."""
+        awareness = get_awareness()
+        return awareness.get_identity()
+    
+    def cmd_mission(self, args):
+        """Learn about the mission."""
+        awareness = get_awareness()
+        
+        return f"""
+## Our Mission
+
+**{awareness.mission}**
+
+### Our Vision
+{awareness.vision}
+
+### Our Values
+"""
+ + "\n".join([f"- {v}" for v in awareness.values]) + """
+
+### Why This Matters
+
+Because coding shouldn't be limited to people with expensive laptops.
+Because creativity doesn't need a desk.
+Because your phone is powerful enough to build the future.
+
+**That's why OWURA exists.**
+"""
+    
+    def cmd_why(self, args):
+        """Why OWURA exists."""
+        awareness = get_awareness()
+        return awareness.get_pride_message()
+    
     def cmd_version(self, args):
         from owura import __version__
         return f"OWURA v{__version__} - AI Coding Agent"
@@ -1608,7 +1747,9 @@ def print_banner():
         |___/                     
 [/bold cyan]
 [dim]v1.0 - AI Coding Agent - Code Anywhere. Anytime.[/dim]
-[dim]Memory: ON | Learning: ON | Skills: {skills} | MCPs: {mcps}[/dim]
+[dim]Memory: ON | Learning: ON | Skills: {skills} | MCPs: {mcps} | Web: ON[/dim]
+
+[italic dim]"I'm not just a tool. I'm a partner in creation."[/italic dim]
 """.format(skills=len(SKILLS), mcps=len(MCP_SERVERS))
     console.print(banner)
 
