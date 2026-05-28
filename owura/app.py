@@ -1767,16 +1767,32 @@ def main():
         console.print("[info]Let's set up your AI provider.[/info]")
         console.print()
         console.print("[muted]Available providers:[/muted]")
-        console.print("  [cyan]gemini[/cyan]  - Google Gemini (free tier available)")
+        console.print("  [cyan]gemini[/cyan]  - Google Gemini (free tier)")
         console.print("  [cyan]openai[/cyan]  - OpenAI GPT-4")
-        console.print("  [cyan]groq[/cyan]    - Groq (fast inference)")
+        console.print("  [cyan]groq[/cyan]    - Groq (fast)")
+        console.print("  [cyan]nvidia[/cyan]  - NVIDIA NIM")
+        console.print("  [cyan]custom[/cyan]  - Any OpenAI-compatible API")
         console.print()
         
-        provider = Prompt.ask("Choose provider", choices=["gemini", "openai", "groq"], default="gemini")
+        provider = Prompt.ask(
+            "Choose provider",
+            choices=["gemini", "openai", "groq", "nvidia", "custom"],
+            default="gemini"
+        )
         config.set("provider", provider)
         
-        defaults = {"gemini": "gemini-2.0-flash", "openai": "gpt-4", "groq": "llama3-70b-8192"}
-        config.set("model", defaults.get(provider))
+        defaults = {
+            "gemini": "gemini-2.0-flash",
+            "openai": "gpt-4",
+            "groq": "llama3-70b-8192",
+            "nvidia": "meta/llama-3.1-70b-instruct",
+            "custom": "default"
+        }
+        config.set("model", defaults.get(provider, "default"))
+        
+        if provider == "custom":
+            base_url = Prompt.ask("Enter API base URL (e.g., https://api.together.xyz/v1)")
+            config.set("base_url", base_url)
         
         api_key = Prompt.ask(f"Enter your {provider} API key")
         config.set("api_key", api_key)
