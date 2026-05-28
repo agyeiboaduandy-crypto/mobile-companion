@@ -115,12 +115,15 @@ class SecuritySystem:
         return sanitized, redacted
     
     # ============================================================
-    # LOCAL CACHING - Minimize API calls
+    # LOCAL CACHING - Minimize API calls with auto-cleanup
     # ============================================================
     def cache_response(self, prompt_hash: str, response: str, provider: str):
-        """Cache API responses locally to minimize data sent."""
-        cache_file = self.security_dir / "cache"
-        cache_file.mkdir(exist_ok=True)
+        """Cache API responses locally with auto-cleanup."""
+        cache_dir = self.security_dir / "cache"
+        cache_dir.mkdir(exist_ok=True)
+        
+        # Auto-clean old cache entries first
+        self._cleanup_cache(cache_dir)
         
         cache_entry = {
             "response": response,
@@ -129,22 +132,66 @@ class SecuritySystem:
             "prompt_hash": prompt_hash
         }
         
-        cache_path = cache_file / f"{prompt_hash}.json"
+        cache_path = cache_dir / f"{prompt_hash}.json"
         cache_path.write_text(json.dumps(cache_entry))
+    
+    def _cleanup_cache(self, cache_dir: Path):
+        """Auto-clean cache when it gets too big."""
+        if not cache_dir.exists():
+            return
+        
+        # Get all cache files
+        cache_files = list(cache_dir.glob("*.json"))
+        
+        # Remove if more than 100 files (keep most recent 50)
+        if len(cache_files) > 100:
+            cache_files.sort(key=lambda x: x.stat().st_mtime)
+            for f in cache_files[:-50]:
+                try:
+                    f.unlink()
+                except:
+                    pass
+        
+        # Remove files older than 7 days
+        import time
+        cutoff = time.time() - (7 * 24 * 60 * 60)
+        for f in cache_files:
+            try:
+                if f.stat().st_mtime < cutoff:
+                    f.unlink()
+            except:
+                pass
+        
+        # Remove if total cache > 10MB
+        total_size = sum(f.stat().st_size for f in cache_dir.glob("*.json"))
+        if total_size > 10 * 1024 * 1024:  # 10MB
+            cache_files = list(cache_dir.glob("*.json"))
+            cache_files.sort(key=lambda x: x.stat().st_mtime)
+            for f in cache_files[:len(cache_files)//2]:
+                try:
+                    f.unlink()
+                except:
+                    pass
     
     def get_cached_response(self, prompt: str) -> str:
         """Check cache for similar prompt."""
-        cache_file = self.security_dir / "cache"
-        if not cache_file.exists():
+        cache_dir = self.security_dir / "cache"
+        if not cache_dir.exists():
             return None
         
         prompt_hash = hashlib.sha256(prompt.encode()).hexdigest()[:16]
-        cache_path = cache_file / f"{prompt_hash}.json"
+        cache_path = cache_dir / f"{prompt_hash}.json"
         
         if cache_path.exists():
             try:
                 cache = json.loads(cache_path.read_text())
-                return cache["response"]
+                # Check if cache is less than 1 hour old
+                from datetime import timedelta
+                cached_time = datetime.fromisoformat(cache["cached"])
+                if datetime.now() - cached_time < timedelta(hours=1):
+                    return cache["response"]
+                else:
+                    cache_path.unlink()  # Remove expired cache
             except:
                 pass
         
