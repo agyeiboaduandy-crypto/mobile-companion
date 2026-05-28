@@ -4,31 +4,33 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="24dp"
-    android:background="#1a1a2e">
+    android:background="#0a0a0f">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Available Models"
+        android:text="OWURA MODELS"
         android:textSize="24sp"
-        android:textColor="#ffffff"
+        android:textColor="#00ff88"
         android:textStyle="bold"
+        android:fontFamily="monospace"
         android:layout_marginBottom="8dp" />
 
     <TextView
         android:id="@+id/statusText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Loading..."
-        android:textSize="14sp"
-        android:textColor="#aaaaaa"
+        android:text="> Loading..."
+        android:textSize="12sp"
+        android:textColor="#00aa55"
+        android:fontFamily="monospace"
         android:layout_marginBottom="16dp" />
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:background="#16213e"
+        android:background="#1a1a2e"
         android:padding="12dp">
 
         <TextView
@@ -36,8 +38,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Loading models..."
-            android:textSize="14sp"
-            android:textColor="#ffffff"
+            android:textSize="12sp"
+            android:textColor="#00ff88"
             android:fontFamily="monospace" />
 
     </ScrollView>
@@ -46,10 +48,12 @@
         android:id="@+id/btnRefresh"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="Refresh Models"
-        android:textSize="16sp"
-        android:backgroundTint="#0f3460"
-        android:textColor="#ffffff"
+        android:text="[ REFRESH ]"
+        android:textSize="14sp"
+        android:textAllCaps="false"
+        android:backgroundTint="#1a1a2e"
+        android:textColor="#00ff88"
+        android:fontFamily="monospace"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="12dp" />
 
@@ -57,9 +61,11 @@
         android:id="@+id/btnBack"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="Back"
-        android:textSize="16sp"
-        android:backgroundTint="#16213e"
-        android:textColor="#ffffff" />
+        android:text="[ BACK ]"
+        android:textSize="14sp"
+        android:textAllCaps="false"
+        android:backgroundTint="#1a1a2e"
+        android:textColor="#00ff88"
+        android:fontFamily="monospace" />
 
 </LinearLayout>
