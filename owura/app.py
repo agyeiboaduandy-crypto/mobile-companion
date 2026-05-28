@@ -45,6 +45,7 @@ from owura.skills import SKILLS, MCP_SERVERS, get_skill_help, get_mcp_help, get_
 from owura.memory import get_memory
 from owura.compactor import get_compactor
 from owura.security import get_security
+from owura.pro import get_pro_tools
 
 # ============================================================
 # CONFIGURATION
@@ -550,6 +551,11 @@ class CommandProcessor:
             "/status": self.cmd_status,
             "/clean": self.cmd_clean,
             "/privacy": self.cmd_privacy,
+            "/create": self.cmd_create,
+            "/analyze": self.cmd_analyze,
+            "/generate": self.cmd_generate,
+            "/deploy": self.cmd_deploy,
+            "/test": self.cmd_test,
             "/version": self.cmd_version,
             "/quit": self.cmd_quit,
             "/exit": self.cmd_quit,
@@ -1106,17 +1112,127 @@ if __name__ == "__main__":
         report = security.get_privacy_report()
         console.print(f"\n{report}")
         
-        # Show what gets redacted
-        console.print("\n[bold]Auto-redacted patterns:[/bold]")
-        console.print("  - Email addresses")
-        console.print("  - Phone numbers")
-        console.print("  - API keys (sk-*, ghp_*, gsk_*)")
-        console.print("  - Passwords in code")
-        console.print("  - Credit card numbers")
-        console.print("  - IP addresses")
-        console.print("\n[bold]Your data stays on your device.[/bold]")
+        return None
+    
+    def cmd_create(self, args):
+        """Create a new project from template."""
+        pro = get_pro_tools()
+        
+        templates = ["flask-api", "fastapi", "react", "express", "django", "nextjs", "python-cli", "rust-cli", "go-api"]
+        
+        if not args:
+            return f"Usage: /create <template> <name>\n\nAvailable templates:\n" + "\n".join([f"  - {t}" for t in templates])
+        
+        parts = args.split(maxsplit=1)
+        if len(parts) < 2:
+            return "Usage: /create <template> <name>\nExample: /create flask-api myapp"
+        
+        template = parts[0]
+        name = parts[1]
+        
+        if template not in templates:
+            return f"Unknown template: {template}\nAvailable: {', '.join(templates)}"
+        
+        console.print(f"[yellow]Creating {template} project: {name}...[/yellow]")
+        
+        with console.status("[muted]Setting up project...[/muted]"):
+            result = pro.create_project(name, template)
+        
+        if result.get("success"):
+            console.print(f"[green]Project created![/green]")
+            console.print(f"  Path: {result['path']}")
+            console.print(f"  Template: {result['template']}")
+            console.print(f"\n  cd {result['path']}")
+            return None
+        else:
+            return f"Error: {result.get('error', 'Unknown error')}"
+    
+    def cmd_analyze(self, args):
+        """Analyze current project."""
+        pro = get_pro_tools()
+        
+        path = args if args else "."
+        
+        with console.status("[muted]Analyzing project...[/muted]"):
+            analysis = pro.analyze_project(path)
+        
+        table = Table(title="Project Analysis", show_header=True, header_style="bold cyan")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", style="green")
+        
+        table.add_row("Files", str(analysis["files"]))
+        table.add_row("Languages", ", ".join(analysis["languages"]) or "None detected")
+        table.add_row("Has Tests", "Yes" if analysis["has_tests"] else "No")
+        table.add_row("Has Docker", "Yes" if analysis["has_docker"] else "No")
+        table.add_row("Has CI/CD", "Yes" if analysis["has_ci"] else "No")
+        table.add_row("Has Docs", "Yes" if analysis["has_docs"] else "No")
+        
+        console.print(table)
+        
+        if analysis["suggestions"]:
+            console.print("\n[bold]Suggestions:[/bold]")
+            for s in analysis["suggestions"]:
+                console.print(f"  - {s}")
         
         return None
+    
+    def cmd_generate(self, args):
+        """Generate code or tests."""
+        pro = get_pro_tools()
+        
+        if not args:
+            return "Usage: /generate <type> <file>\n\nTypes: tests, migration, deploy"
+        
+        parts = args.split(maxsplit=1)
+        gen_type = parts[0]
+        target = parts[1] if len(parts) > 1 else "."
+        
+        if gen_type == "tests":
+            result = pro.generate_tests(target)
+            console.print(Syntax(result, "python", theme="monokai"))
+        elif gen_type == "deploy":
+            result = pro.generate_deploy_config("docker", "app")
+            console.print(Syntax(result, "yaml", theme="monokai"))
+        else:
+            return f"Unknown generation type: {gen_type}"
+        
+        return None
+    
+    def cmd_deploy(self, args):
+        """Generate deployment config."""
+        pro = get_pro_tools()
+        
+        platforms = ["docker", "heroku", "railway", "vercel"]
+        
+        if not args:
+            return f"Usage: /deploy <platform>\n\nPlatforms: {', '.join(platforms)}"
+        
+        if args not in platforms:
+            return f"Unknown platform: {args}\nAvailable: {', '.join(platforms)}"
+        
+        result = pro.generate_deploy_config(args, "app")
+        console.print(Syntax(result, "yaml" if args != "heroku" else "bash", theme="monokai"))
+        
+        return None
+    
+    def cmd_test(self, args):
+        """Run tests."""
+        if not args:
+            return "Usage: /test <file_or_directory>"
+        
+        try:
+            result = subprocess.run(
+                f"python -m pytest {args} -v",
+                shell=True, capture_output=True, text=True, timeout=60
+            )
+            output = result.stdout
+            if result.stderr:
+                output += f"\n{result.stderr}"
+            return output or "Tests completed"
+        except subprocess.TimeoutExpired:
+            return "Tests timed out (60s limit)"
+        except Exception as e:
+            return f"Error: {str(e)}"
     
     def cmd_version(self, args):
         from owura import __version__
