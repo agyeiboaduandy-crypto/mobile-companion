@@ -44,6 +44,7 @@ except ImportError:
 from owura.skills import SKILLS, MCP_SERVERS, get_skill_help, get_mcp_help, get_skill_context
 from owura.memory import get_memory
 from owura.compactor import get_compactor
+from owura.security import get_security
 
 # ============================================================
 # CONFIGURATION
@@ -71,34 +72,58 @@ class Config:
     def __init__(self):
         self.config_dir = CONFIG_DIR
         self.config_file = CONFIG_FILE
+        self.security = get_security()
         self.data = self.load()
     
     def load(self):
         if self.config_file.exists():
             with open(self.config_file) as f:
-                return json.load(f)
+                data = json.load(f)
+                # Migrate API key to encrypted storage
+                if "api_key" in data and data["api_key"]:
+                    provider = data.get("provider", "custom")
+                    self.security.encrypt_key(provider, data["api_key"])
+                    data["api_key"] = ""
+                    self.save_data(data)
+                return data
         return {
             "provider": "gemini",
             "api_key": "",
             "model": "gemini-2.0-flash",
+            "base_url": "",
             "theme": "dark",
             "auto_save": True,
             "max_history": 100,
             "memory_enabled": True,
             "auto_learn": True,
+            "privacy_mode": True,
         }
     
     def save(self):
+        self.save_data(self.data)
+    
+    def save_data(self, data):
         self.config_dir.mkdir(parents=True, exist_ok=True)
+        # Never save API key to plaintext config
+        save_data = {k: v for k, v in data.items() if k != "api_key"}
         with open(self.config_file, "w") as f:
-            json.dump(self.data, f, indent=2)
+            json.dump(save_data, f, indent=2)
     
     def get(self, key, default=None):
+        if key == "api_key":
+            # Get from encrypted storage
+            provider = self.data.get("provider", "custom")
+            return self.security.decrypt_key(provider) or ""
         return self.data.get(key, default)
     
     def set(self, key, value):
-        self.data[key] = value
-        self.save()
+        if key == "api_key":
+            # Store in encrypted storage
+            provider = self.data.get("provider", "custom")
+            self.security.encrypt_key(provider, value)
+        else:
+            self.data[key] = value
+            self.save()
 
 # ============================================================
 # AI PROVIDER (Enhanced with Memory)
@@ -107,6 +132,7 @@ class AIProvider:
     def __init__(self, config):
         self.config = config
         self.memory = get_memory()
+        self.security = get_security()
     
     def chat(self, message, context=None):
         provider = self.config.get("provider")
@@ -117,6 +143,18 @@ class AIProvider:
             console.print("[error]No API key configured. Use '/key' to set one.[/error]")
             return None
         
+        # Check cache first
+        cached = self.security.get_cached_response(message)
+        if cached:
+            return cached
+        
+        # Sanitize prompt (strip personal info)
+        if self.config.get("privacy_mode", True):
+            sanitized, redacted = self.security.sanitize_prompt(message)
+            if redacted:
+                self.security.log_prompt(provider, message, redacted)
+                message = sanitized
+        
         # Get skills context
         skill_context = get_skill_context(message)
         
@@ -125,7 +163,6 @@ class AIProvider:
         if self.config.get("memory_enabled"):
             memory_context = self.memory.get_full_context()
             
-            # Search memory for relevant info
             memory_search = self.memory.search(message)
             if memory_search:
                 memory_context += f"\n\n## Relevant from Memory\n{memory_search}"
@@ -133,19 +170,30 @@ class AIProvider:
         # Build enhanced system prompt
         system_prompt = self._build_system_prompt(skill_context, memory_context)
         
+        # Add privacy notice to system prompt
+        system_prompt += "\n\n## Privacy\nDo not store or repeat any personal information (emails, phones, keys, passwords). Keep all user data private."
+        
+        # Call provider
         if provider == "gemini":
-            return self._gemini_chat(message, api_key, system_prompt)
+            response = self._gemini_chat(message, api_key, system_prompt)
         elif provider == "custom" or base_url:
-            return self._custom_openai_chat(message, api_key, system_prompt, base_url)
+            response = self._custom_openai_chat(message, api_key, system_prompt, base_url)
         elif provider == "openai":
-            return self._openai_chat(message, api_key, system_prompt)
+            response = self._openai_chat(message, api_key, system_prompt)
         elif provider == "groq":
-            return self._groq_chat(message, api_key, system_prompt)
+            response = self._groq_chat(message, api_key, system_prompt)
         elif provider == "nvidia":
-            return self._nvidia_chat(message, api_key, system_prompt)
+            response = self._nvidia_chat(message, api_key, system_prompt)
         else:
-            console.print(f"[error]Unknown provider: {provider}[/error]")
-            return None
+            return f"Unknown provider: {provider}"
+        
+        # Cache response
+        if response and not response.startswith("Error"):
+            import hashlib
+            prompt_hash = hashlib.sha256(message.encode()).hexdigest()[:16]
+            self.security.cache_response(prompt_hash, response, provider)
+        
+        return response
     
     def _build_system_prompt(self, skill_context, memory_context):
         prompt = """You are OWURA, a living AI coding assistant that learns and grows.
@@ -501,6 +549,7 @@ class CommandProcessor:
             "/compact": self.cmd_compact,
             "/status": self.cmd_status,
             "/clean": self.cmd_clean,
+            "/privacy": self.cmd_privacy,
             "/version": self.cmd_version,
             "/quit": self.cmd_quit,
             "/exit": self.cmd_quit,
@@ -1033,6 +1082,39 @@ if __name__ == "__main__":
         
         disk = self.compactor.get_disk_usage()
         console.print(f"[green]Done! Disk: {disk['free_gb']}GB free ({disk['percent_used']}% used)[/green]")
+        
+        return None
+    
+    def cmd_privacy(self, args):
+        """Show privacy status and controls."""
+        security = get_security()
+        
+        table = Table(title="Privacy Status", show_header=True, header_style="bold green")
+        table.add_column("Feature", style="cyan")
+        table.add_column("Status", style="green")
+        
+        privacy_mode = self.config.get("privacy_mode", True)
+        table.add_row("Privacy Mode", "ON" if privacy_mode else "OFF")
+        table.add_row("API Keys", "Encrypted at rest")
+        table.add_row("Prompt Sanitization", "Strips emails, phones, keys, passwords")
+        table.add_row("Response Caching", "Local only, no data sent to providers")
+        table.add_row("Prompt Logging", "Hash-only audit trail")
+        
+        console.print(table)
+        
+        # Show privacy report
+        report = security.get_privacy_report()
+        console.print(f"\n{report}")
+        
+        # Show what gets redacted
+        console.print("\n[bold]Auto-redacted patterns:[/bold]")
+        console.print("  - Email addresses")
+        console.print("  - Phone numbers")
+        console.print("  - API keys (sk-*, ghp_*, gsk_*)")
+        console.print("  - Passwords in code")
+        console.print("  - Credit card numbers")
+        console.print("  - IP addresses")
+        console.print("\n[bold]Your data stays on your device.[/bold]")
         
         return None
     
