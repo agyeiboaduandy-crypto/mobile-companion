@@ -1,4 +1,4 @@
-package com.mobilecompanion
+package com.owura.agent
 
 import android.os.Bundle
 import android.widget.Button
@@ -30,14 +30,14 @@ class ModelsActivity : AppCompatActivity() {
     }
 
     private fun loadModels() {
-        val modelsFile = File("/data/data/com.termux/files/home/.mobile-companion-models")
+        val modelsFile = File("/data/data/com.termux/files/home/.owura-models")
 
         if (modelsFile.exists()) {
             val content = modelsFile.readText()
             modelsList.text = content
             statusText.text = "Models loaded"
         } else {
-            modelsList.text = "No models found.\n\nRun 'ai-update-models' in Termux to fetch available models."
+            modelsList.text = "No models found.\n\nRun 'owura-update-models' in Termux to fetch available models."
             statusText.text = "No models file"
         }
     }
