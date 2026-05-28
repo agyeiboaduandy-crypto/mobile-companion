@@ -29,6 +29,12 @@ mkdir -p "$INSTALL_DIR/config"
 mkdir -p "$INSTALL_DIR/docs"
 mkdir -p "$HOME/.config/owura"
 
+# Fix DNS issues
+echo "Fixing DNS..."
+rm -rf $PREFIX/etc/resolv.conf
+echo "nameserver 8.8.8.8" > $PREFIX/etc/resolv.conf
+echo "nameserver 8.8.4.4" >> $PREFIX/etc/resolv.conf
+
 echo "[2/7] Writing core scripts..."
 cat > "$INSTALL_DIR/scripts/setup.sh" << 'SETUP'
 #!/data/data/com.termux/files/usr/bin/bash
