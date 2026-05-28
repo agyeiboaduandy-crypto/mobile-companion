@@ -47,6 +47,7 @@ from owura.compactor import get_compactor
 from owura.security import get_security
 from owura.pro import get_pro_tools
 from owura.creative import get_creative
+from owura.web import get_web
 
 # ============================================================
 # CONFIGURATION
@@ -568,6 +569,17 @@ class CommandProcessor:
             "/color": self.cmd_color,
             "/sysinfo": self.cmd_sysinfo,
             "/ascii": self.cmd_ascii,
+            "/search": self.cmd_search,
+            "/github": self.cmd_github,
+            "/pypi": self.cmd_pypi,
+            "/npm": self.cmd_npm_search,
+            "/so": self.cmd_stackoverflow,
+            "/wiki": self.cmd_wikipedia,
+            "/news": self.cmd_news,
+            "/weather": self.cmd_weather,
+            "/ip": self.cmd_ip,
+            "/fetch": self.cmd_fetch,
+            "/docs": self.cmd_docs,
             "/version": self.cmd_version,
             "/quit": self.cmd_quit,
             "/exit": self.cmd_quit,
@@ -1351,6 +1363,102 @@ Examples:
         art = creative.get_ascii_art(args or "owura")
         console.print(art, style="cyan")
         return None
+    
+    def cmd_search(self, args):
+        """Search the web."""
+        web = get_web()
+        
+        if not args:
+            return "Usage: /search <query>\n\nExample: /search how to use async python"
+        
+        return web.search(args)
+    
+    def cmd_github(self, args):
+        """Search GitHub."""
+        web = get_web()
+        
+        if not args:
+            return "Usage: /github <query>\n\nExample: /github python web scraper"
+        
+        return web.search_github(args)
+    
+    def cmd_pypi(self, args):
+        """Search PyPI packages."""
+        web = get_web()
+        
+        if not args:
+            return "Usage: /pypi <package>\n\nExample: /pypi requests"
+        
+        return web.search_pypi(args)
+    
+    def cmd_npm_search(self, args):
+        """Search npm packages."""
+        web = get_web()
+        
+        if not args:
+            return "Usage: /npm <package>\n\nExample: /npm express"
+        
+        return web.search_npm(args)
+    
+    def cmd_stackoverflow(self, args):
+        """Search StackOverflow."""
+        web = get_web()
+        
+        if not args:
+            return "Usage: /so <query>\n\nExample: /so python list comprehension"
+        
+        return web.search_stackoverflow(args)
+    
+    def cmd_wikipedia(self, args):
+        """Search Wikipedia."""
+        web = get_web()
+        
+        if not args:
+            return "Usage: /wiki <topic>\n\nExample: /wiki recursion"
+        
+        return web.search_wikipedia(args)
+    
+    def cmd_news(self, args):
+        """Get latest news."""
+        web = get_web()
+        topic = args if args else "technology"
+        return web.get_news(topic)
+    
+    def cmd_weather(self, args):
+        """Get weather."""
+        web = get_web()
+        
+        if not args:
+            return "Usage: /weather <city>\n\nExample: /weather London"
+        
+        return web.get_weather(args)
+    
+    def cmd_ip(self, args):
+        """Get IP information."""
+        web = get_web()
+        return web.get_ip_info()
+    
+    def cmd_fetch(self, args):
+        """Fetch URL content."""
+        web = get_web()
+        
+        if not args:
+            return "Usage: /fetch <url>\n\nExample: /fetch https://docs.python.org"
+        
+        return web.fetch_url(args)
+    
+    def cmd_docs(self, args):
+        """Search documentation."""
+        web = get_web()
+        
+        if not args:
+            return "Usage: /docs <query> [python|javascript|node|react|flask]\n\nExample: /docs async await python"
+        
+        parts = args.split(maxsplit=1)
+        query = parts[0]
+        docs = parts[1] if len(parts) > 1 else "python"
+        
+        return web.search_docs(query, docs)
     
     def cmd_version(self, args):
         from owura import __version__
