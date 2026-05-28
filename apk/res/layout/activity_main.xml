@@ -3,84 +3,116 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="24dp"
-    android:background="#1a1a2e">
+    android:padding="20dp"
+    android:background="#0A0A0F">
+
+    <!-- Header: Neon Glow -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="OWURA_OS v1.0"
+        android:textSize="12sp"
+        android:textColor="#00FF88"
+        android:fontFamily="monospace"
+        android:gravity="start"
+        android:layout_marginBottom="4dp" />
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Mobile Companion"
+        android:text=">> AI_CODING_AGENT"
         android:textSize="28sp"
-        android:textColor="#ffffff"
+        android:textColor="#00FF88"
         android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="AI Coding Station"
-        android:textSize="16sp"
-        android:textColor="#aaaaaa"
+        android:fontFamily="monospace"
         android:gravity="center"
         android:layout_marginBottom="32dp" />
 
-    <TextView
-        android:id="@+id/termuxStatus"
+    <!-- Status Terminal -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Termux: Checking..."
-        android:textSize="14sp"
-        android:textColor="#ffffff"
-        android:layout_marginBottom="8dp" />
+        android:orientation="vertical"
+        android:background="#11111B"
+        android:padding="12dp"
+        android:layout_marginBottom="24dp">
 
+        <TextView
+            android:id="@+id/termuxStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SYS_LINK: CHECKING..."
+            android:textSize="12sp"
+            android:textColor="#00FF88"
+            android:fontFamily="monospace" />
+
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="AGENT_STATUS: INITIALIZING..."
+            android:textSize="12sp"
+            android:textColor="#00FF88"
+            android:fontFamily="monospace" />
+    </LinearLayout>
+
+    <!-- Command Board -->
     <TextView
-        android:id="@+id/statusText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Mobile Companion: Checking..."
+        android:text="COMMAND_BOARD"
         android:textSize="14sp"
-        android:textColor="#ffffff"
-        android:layout_marginBottom="24dp" />
+        android:textColor="#00AA55"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="12dp" />
 
     <Button
         android:id="@+id/btnSetup"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="Setup Wizard"
+        android:text="[ EXEC_SETUP ]"
         android:textSize="16sp"
-        android:backgroundTint="#e94560"
-        android:textColor="#ffffff"
+        android:textAllCaps="false"
+        android:backgroundTint="#0A0A0F"
+        android:textColor="#00FF88"
+        android:fontFamily="monospace"
         android:layout_marginBottom="12dp" />
 
     <Button
         android:id="@+id/btnKeys"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="API Keys"
+        android:text="[ CONFIG_KEYS ]"
         android:textSize="16sp"
-        android:backgroundTint="#0f3460"
-        android:textColor="#ffffff"
+        android:textAllCaps="false"
+        android:backgroundTint="#0A0A0F"
+        android:textColor="#00FF88"
+        android:fontFamily="monospace"
         android:layout_marginBottom="12dp" />
 
     <Button
         android:id="@+id/btnModels"
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:text="Available Models"
+        android:text="[ SCAN_MODELS ]"
         android:textSize="16sp"
-        android:backgroundTint="#16213e"
-        android:textColor="#ffffff"
+        android:textAllCaps="false"
+        android:backgroundTint="#0A0A0F"
+        android:textColor="#00FF88"
+        android:fontFamily="monospace"
         android:layout_marginBottom="12dp" />
 
     <Button
         android:id="@+id/btnOpenTermux"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="Open Termux"
-        android:textSize="16sp"
-        android:backgroundTint="#533483"
-        android:textColor="#ffffff"
+        android:layout_height="64dp"
+        android:text=">> INITIALIZE_SESSION"
+        android:textSize="18sp"
+        android:textAllCaps="false"
+        android:backgroundTint="#00FF88"
+        android:textColor="#0A0A0F"
+        android:textStyle="bold"
+        android:fontFamily="monospace"
         android:layout_marginBottom="12dp" />
 
 </LinearLayout>
