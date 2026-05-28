@@ -1,4 +1,4 @@
-package com.mobilecompanion
+package com.owura.agent
 
 import android.content.Intent
 import android.os.Bundle
@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkTermuxStatus() {
         val termuxDir = File("/data/data/com.termux")
-        val companionDir = File("/data/data/com.termux/files/home/mobile-companion")
+        val owuraDir = File("/data/data/com.termux/files/home/owura")
 
         if (termuxDir.exists()) {
             termuxStatus.text = "Termux: Installed"
@@ -50,11 +50,11 @@ class MainActivity : AppCompatActivity() {
             termuxStatus.setTextColor(getColor(R.color.red))
         }
 
-        if (companionDir.exists()) {
-            statusText.text = "Mobile Companion: Ready"
+        if (owuraDir.exists()) {
+            statusText.text = "OWURA: Ready"
             statusText.setTextColor(getColor(R.color.green))
         } else {
-            statusText.text = "Mobile Companion: Not Setup"
+            statusText.text = "OWURA: Not Setup"
             statusText.setTextColor(getColor(R.color.orange))
         }
     }
