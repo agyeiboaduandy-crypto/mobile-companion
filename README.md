@@ -43,6 +43,9 @@ First run walks you through:
 3. Select a model from all available (fetched live from your provider)
 4. Start building
 
+Type `/` then press **Tab** to see and autocomplete any command.
+Type a partial command (e.g. `/mem`) and press **Enter** to see matching commands.
+
 Each launch checks for new OWURA versions — notifications appear automatically.
 
 ---

@@ -70,6 +70,32 @@ console = Console(theme=THEME)
 
 
 # ============================================================
+# COMMAND LIST (for autocomplete)
+# ============================================================
+COMMANDS_LIST = sorted([
+    "/help", "/config", "/provider", "/model", "/key",
+    "/build", "/create", "/clear", "/history",
+    "/run", "/exec", "/ls", "/pwd", "/cd", "/cat", "/git",
+    "/skills", "/mcp", "/skill-add", "/skill-remove",
+    "/mcp-add", "/mcp-remove",
+    "/memory", "/remember", "/recall", "/project", "/learn",
+    "/suggest", "/template", "/compact", "/status", "/clean", "/privacy",
+    "/analyze", "/generate", "/deploy", "/test",
+    "/error", "/save", "/snippets", "/commit",
+    "/api", "/usage", "/json", "/regex", "/color",
+    "/sysinfo", "/ascii",
+    "/search", "/github", "/pypi", "/npm", "/so",
+    "/wiki", "/news", "/weather", "/ip", "/fetch", "/docs",
+    "/review", "/optimize", "/reverse",
+    "/loophole", "/fix", "/free",
+    "/think", "/reframe", "/approaches", "/first-principles", "/scamper",
+    "/mood", "/who", "/mission", "/why",
+    "/version", "/upgrade",
+    "/quit", "/exit", "/q",
+])
+
+
+# ============================================================
 # MODEL FETCHING
 # ============================================================
 PROVIDER_API_URLS = {
@@ -1483,13 +1509,37 @@ def main():
             ))
             memory.set_context("update_notified", latest_ver)
 
-    console.print("[muted]Type /help for commands, /quit to exit[/muted]\n")
+    console.print("[muted]Tip: type / and press Tab to see all commands[/muted]\n")
+
+    try:
+        import readline
+        def completer(text, state):
+            matches = [c for c in COMMANDS_LIST if c.startswith(text)]
+            try:
+                return matches[state]
+            except IndexError:
+                return None
+        readline.set_completer(completer)
+        readline.parse_and_bind("tab: complete")
+        readline.set_completer_delims(" \t\n;")
+    except Exception:
+        pass
 
     while True:
         try:
             user_input = Prompt.ask("[bold cyan]owura[/bold cyan]")
             if not user_input.strip():
                 continue
+
+            if user_input.startswith("/") and not user_input.split()[0] in COMMANDS_LIST:
+                prefix = user_input.split()[0]
+                matches = [c for c in COMMANDS_LIST if c.startswith(prefix)]
+                if matches:
+                    if len(matches) == 1:
+                        user_input = matches[0]
+                    else:
+                        console.print("[dim]Matching commands:[/dim] " + ", ".join(f"[cyan]{m}[/cyan]" for m in matches))
+                        continue
 
             processor.history.append({"input": user_input, "time": datetime.now().strftime("%H:%M:%S")})
 
