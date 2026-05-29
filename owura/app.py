@@ -107,8 +107,9 @@ PROVIDER_NAMES = {
 
 
 def fetch_available_models(provider, api_key, base_url=""):
-    """Fetch available models from a provider's API. Returns list of model IDs or None on failure."""
+    """Fetch ALL available models from a provider's API. Handles pagination. Returns list of model IDs or None."""
     import urllib.request
+    import time
     try:
         if provider == "gemini":
             url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
@@ -116,32 +117,57 @@ def fetch_available_models(provider, api_key, base_url=""):
             with urllib.request.urlopen(req, timeout=15) as resp:
                 data = json.loads(resp.read().decode())
                 models = [m["name"].replace("models/", "") for m in data.get("models", [])]
-                models = [m for m in models if "generation" in m or "chat" in m or "gemini" in m or "gemma" in m]
-                return models
+            return models
 
         api_base = base_url if base_url else PROVIDER_API_URLS.get(provider, "")
         if not api_base:
             return None
 
+        headers = {"Authorization": f"Bearer {api_key}"}
         if provider == "anthropic" and not base_url:
-            url = f"{api_base}/models"
-            req = urllib.request.Request(url, headers={
-                "x-api-key": api_key,
-                "anthropic-version": "2023-06-01",
-            })
+            headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01"}
+
+        models = []
+        url = api_base.rstrip("/") + "/models"
+        max_pages = 20
+        page = 0
+        while url and page < max_pages:
+            req = urllib.request.Request(url, headers=headers)
             with urllib.request.urlopen(req, timeout=15) as resp:
                 data = json.loads(resp.read().decode())
-                models = [m["id"] for m in data.get("data", [])]
-                return models
 
-        url = api_base.rstrip("/") + "/models"
-        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {api_key}"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode())
-            models = [m["id"] for m in data.get("data", [])]
-            if not models:
-                models = [m["id"] for m in data.get("models", [])]
-            return models
+            batch = [m["id"] for m in data.get("data", [])]
+            if not batch:
+                raw = data.get("models", {})
+                if isinstance(raw, dict):
+                    batch = list(raw.keys())
+                elif isinstance(raw, list):
+                    batch = [m["id"] if isinstance(m, dict) else m for m in raw]
+
+            models.extend(batch)
+            page += 1
+
+            next_page = None
+            if data.get("has_more") or data.get("next_page_token"):
+                next_page = data.get("next_page_token")
+            if data.get("next"):
+                next_page = data["next"]
+            if not next_page and data.get("last_id"):
+                next_page = data["last_id"]
+
+            if next_page:
+                sep = "&" if "?" in url else "?"
+                if provider == "anthropic":
+                    url = url.split("?")[0] + f"?after={next_page}"
+                elif isinstance(next_page, str) and len(next_page) > 0:
+                    url = url.split("?")[0] + f"?after={next_page}"
+                else:
+                    url = ""
+                time.sleep(0.3)
+            else:
+                url = ""
+
+        return models if models else None
 
     except Exception:
         return None
@@ -397,6 +423,27 @@ class CommandProcessor:
         self.smart = get_smart()
         self.history = []
 
+    @staticmethod
+    @staticmethod
+    def _select_model(models):
+        """Show all models and let user select by number or name."""
+        if not models:
+            return Prompt.ask("Could not fetch models. Enter model name manually")
+        total = len(models)
+        console.print(f"[info]Found {total} available models. Select one:[/info]")
+        for i, m in enumerate(models, 1):
+            console.print(f"  [cyan]{i}.[/cyan] {m}")
+        while True:
+            choice = Prompt.ask("Enter model number or name", default="1")
+            if choice.isdigit():
+                idx = int(choice) - 1
+                if 0 <= idx < total:
+                    return models[idx]
+            else:
+                if choice in models:
+                    return choice
+                console.print("[warning]Model not found in list. Try again or type a number.[/warning]")
+
     def process(self, user_input):
         if user_input.startswith("/"):
             return self.handle_command(user_input)
@@ -647,26 +694,9 @@ class CommandProcessor:
                     self.config.set("api_key", api_key)
 
         models = fetch_available_models(provider, api_key, base_url)
-        if models:
-            console.print(f"[info]Found {len(models)} available models. Select one:[/info]")
-            for i, m in enumerate(models[:30], 1):
-                console.print(f"  [cyan]{i}.[/cyan] {m}")
-            current_model = self.config.get("model", "")
-            default_idx = "1"
-            if current_model in models:
-                default_idx = str(models.index(current_model) + 1)
-            model_choices = [str(i) for i in range(1, min(len(models), 30)+1)] + models[:30]
-            model_choice = Prompt.ask("Select model", choices=model_choices, default=default_idx)
-            if model_choice.isdigit():
-                selected = models[int(model_choice)-1]
-            else:
-                selected = model_choice
-            self.config.set("model", selected)
-            return f"Provider set to [bold]{provider}[/bold]. Model: [bold]{selected}[/bold]"
-        else:
-            model = Prompt.ask("Could not fetch models. Enter model name manually")
-            self.config.set("model", model)
-            return f"Provider set to [bold]{provider}[/bold]. Model: [bold]{model}[/bold] (manual)"
+        selected = self._select_model(models)
+        self.config.set("model", selected)
+        return f"Provider set to [bold]{provider}[/bold]. Model: [bold]{selected}[/bold]"
 
     def cmd_model(self, args):
         if not args:
@@ -1258,19 +1288,7 @@ def main():
         config.set("api_key", api_key)
 
         models = fetch_available_models(provider, api_key, base_url)
-        if models:
-            console.print(f"[info]Found {len(models)} available models. Select one:[/info]")
-            for i, m in enumerate(models[:30], 1):
-                console.print(f"  [cyan]{i}.[/cyan] {m}")
-            model_choices = [str(i) for i in range(1, min(len(models), 30)+1)] + models[:30]
-            model_choice = Prompt.ask("Select model", choices=model_choices, default="1")
-            if model_choice.isdigit():
-                config.set("model", models[int(model_choice)-1])
-            else:
-                config.set("model", model_choice)
-        else:
-            model = Prompt.ask("Could not fetch models. Enter model name manually")
-            config.set("model", model)
+        config.set("model", CommandProcessor._select_model(models))
 
         memory.set_preference("provider", provider)
         console.print("[success]Configuration saved![/success]\n")
@@ -1292,6 +1310,8 @@ def main():
 
             with console.status("[muted]Thinking...[/muted]"):
                 response = processor.process(user_input)
+
+            processor.compactor.auto_compact()
 
             if response:
                 console.print()
