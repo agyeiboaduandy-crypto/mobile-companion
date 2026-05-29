@@ -329,11 +329,13 @@ OWURA detects the tech stack and scaffolds a complete production project. You ca
 **Creative**
 | Command | Description |
 |---------|-------------|
-| `/story <concept>` | Learn through stories |
-| `/metaphor <concept>` | Understand via metaphors |
-| `/challenge [easy]` | Coding challenges |
-| `/wisdom` | Programming wisdom |
-| `/poem` | Code poetry |
+| `/think <problem>` | Lateral thinking — challenge assumptions |
+| `/reframe <problem>` | Reframe a problem from different angles |
+| `/approaches <problem>` | Generate 10 solution approaches |
+| `/first-principles <problem>` | Break down to fundamentals and rebuild |
+| `/scamper <problem>` | SCAMPER creative thinking technique |
+| `/loophole <problem>` | Find workarounds for blocked solutions |
+| `/fix <problem>` | Find a way through seemingly impossible problems |
 
 ---
 

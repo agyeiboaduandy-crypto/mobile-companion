@@ -632,12 +632,11 @@ class CommandProcessor:
             "/loophole": self.cmd_loophole,
             "/fix": self.cmd_fix,
             "/free": self.cmd_free,
-            "/story": self.cmd_story,
-            "/metaphor": self.cmd_metaphor,
-            "/name": self.cmd_name,
-            "/poem": self.cmd_poem,
-            "/challenge": self.cmd_challenge,
-            "/wisdom": self.cmd_wisdom,
+            "/think": self.cmd_think,
+            "/reframe": self.cmd_reframe,
+            "/approaches": self.cmd_approaches,
+            "/first-principles": self.cmd_first_principles,
+            "/scamper": self.cmd_scamper,
             "/mood": self.cmd_mood,
             "/who": self.cmd_who,
             "/mission": self.cmd_mission,
@@ -729,15 +728,17 @@ class CommandProcessor:
 | `/weather <city>` | Get weather |
 | `/news [topic]` | Get latest news |
 
-### Creative
-| Command | Description |
-|---------|-------------|
-| `/story <concept>` | Learn as stories |
-| `/metaphor <concept>` | Understand with metaphors |
-| `/challenge [easy]` | Get coding challenges |
-| `/wisdom` | Programming wisdom |
-| `/poem` | Code poetry |
-"""
+    ### Creative
+    | Command | Description |
+    |---------|-------------|
+    | `/think <problem>` | Apply lateral thinking to any problem |
+    | `/reframe <problem>` | Reframe a problem from different angles |
+    | `/approaches <problem>` | Generate 10 solution approaches |
+    | `/first-principles <problem>` | Break down to fundamentals and rebuild |
+    | `/scamper <problem>` | SCAMPER creative thinking technique |
+    | `/loophole <problem>` | Find workarounds for blocked solutions |
+    | `/fix <problem>` | Find a way through seemingly impossible problems |
+    """
 
     def cmd_config(self, args):
         table = Table(title="Current Configuration", show_header=True, header_style="bold cyan")
@@ -1280,31 +1281,30 @@ class CommandProcessor:
             return "Usage: /free <paid_tool>"
         return get_loophole().find_free_alternative(args)
 
-    def cmd_story(self, args):
+    def cmd_think(self, args):
         if not args:
-            return "Usage: /story <concept>"
-        return get_creativity().tell_story(args)
+            return "Usage: /think <problem>"
+        return get_creativity().think_different(args)
 
-    def cmd_metaphor(self, args):
+    def cmd_reframe(self, args):
         if not args:
-            return "Usage: /metaphor <concept>"
-        return get_creativity().generate_metaphor(args)
+            return "Usage: /reframe <problem>"
+        return get_creativity().reframe_problem(args)
 
-    def cmd_name(self, args):
+    def cmd_approaches(self, args):
         if not args:
-            return "Usage: /name <purpose>"
-        return get_creativity().generate_names(args)
+            return "Usage: /approaches <problem>"
+        return get_creativity().generate_approaches(args)
 
-    def cmd_poem(self, args):
-        lang = args if args in ("python", "javascript") else "python"
-        return get_creativity().code_poem(lang)
+    def cmd_first_principles(self, args):
+        if not args:
+            return "Usage: /first-principles <problem>"
+        return get_creativity().first_principles(args)
 
-    def cmd_challenge(self, args):
-        difficulty = args if args in ("easy", "medium", "hard") else "easy"
-        return get_creativity().get_challenge(difficulty)
-
-    def cmd_wisdom(self, args):
-        return get_creativity().get_wisdom()
+    def cmd_scamper(self, args):
+        if not args:
+            return "Usage: /scamper <problem>"
+        return get_creativity().scamper(args)
 
     def cmd_mood(self, args):
         return "I'll adapt my responses to match your mood. Just talk naturally - I'll detect it automatically."
