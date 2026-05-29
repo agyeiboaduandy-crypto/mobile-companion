@@ -40,7 +40,7 @@ except ImportError:
     from rich.theme import Theme
     from rich.table import Table
 
-from owura.skills import SKILLS, MCP_SERVERS, get_skill_context
+from owura.skills import SKILLS, MCP_SERVERS, get_skill_context, get_all_skills, get_all_mcps, add_custom_skill, remove_custom_skill, add_custom_mcp, remove_custom_mcp
 from owura.memory import get_memory
 from owura.compactor import get_compactor
 from owura.security import get_security
@@ -644,6 +644,10 @@ class CommandProcessor:
             "/why": self.cmd_why,
             "/version": self.cmd_version,
             "/upgrade": self.cmd_upgrade,
+            "/skill-add": self.cmd_skill_add,
+            "/skill-remove": self.cmd_skill_remove,
+            "/mcp-add": self.cmd_mcp_add,
+            "/mcp-remove": self.cmd_mcp_remove,
             "/quit": self.cmd_quit,
             "/exit": self.cmd_quit,
             "/q": self.cmd_quit,
@@ -697,8 +701,12 @@ class CommandProcessor:
 ### Skills & MCPs
 | Command | Description |
 |---------|-------------|
-| `/skills` | List available skills |
-| `/mcp` | List MCP servers |
+| `/skills` | List available skills (built-in + custom) |
+| `/mcp` | List MCP servers (built-in + custom) |
+| `/skill-add <key>` | Add a custom skill (interactive prompts) |
+| `/skill-remove <key>` | Remove a custom skill |
+| `/mcp-add <key>` | Add a custom MCP server (interactive prompts) |
+| `/mcp-remove <key>` | Remove a custom MCP server |
 | `/suggest` | Get smart suggestions |
 | `/template <type>` | Get project template |
 
@@ -905,8 +913,11 @@ class CommandProcessor:
         table = Table(title="Available Skills", show_header=True, header_style="bold cyan")
         table.add_column("Skill", style="green")
         table.add_column("Description", style="white")
-        for key, skill in SKILLS.items():
-            table.add_row(key, skill["description"][:40])
+        table.add_column("Type", style="muted")
+        for key, skill in get_all_skills().items():
+            is_custom = key in SKILLS and False or True
+            marker = "custom" if is_custom else "built-in"
+            table.add_row(key, skill["description"][:50], marker)
         console.print(table)
         return None
 
@@ -914,8 +925,11 @@ class CommandProcessor:
         table = Table(title="MCP Servers", show_header=True, header_style="bold cyan")
         table.add_column("Server", style="green")
         table.add_column("Description", style="white")
-        for key, mcp in MCP_SERVERS.items():
-            table.add_row(key, mcp["description"])
+        table.add_column("Type", style="muted")
+        for key, mcp in get_all_mcps().items():
+            is_custom = key in MCP_SERVERS and False or True
+            marker = "custom" if is_custom else "built-in"
+            table.add_row(key, mcp["description"][:50], marker)
         console.print(table)
         return None
 
@@ -1342,6 +1356,51 @@ Because your phone is powerful enough to build the future.
         else:
             console.print("[green]You're on the latest version![/green]")
 
+    def cmd_skill_add(self, args):
+        if not args:
+            return "Usage: /skill-add <key>\n\nExample: /skill-add my-linter\nThen follow the prompts."
+        key = args.strip().replace(" ", "-").lower()
+        name = Prompt.ask("Skill name")
+        description = Prompt.ask("Short description")
+        triggers = Prompt.ask("Trigger keywords (comma-separated)")
+        console.print("[info]Now enter the skill prompt (instructions for the AI). Type /done on its own line when finished:[/info]")
+        prompt_lines = []
+        while True:
+            line = input()
+            if line.strip() == "/done":
+                break
+            prompt_lines.append(line)
+        prompt = "\n".join(prompt_lines)
+        add_custom_skill(key, name, description, [t.strip() for t in triggers.split(",") if t.strip()], prompt)
+        return f"[success]Custom skill '{key}' added![/success]"
+
+    def cmd_skill_remove(self, args):
+        if not args:
+            return "Usage: /skill-remove <key>"
+        key = args.strip().lower()
+        if remove_custom_skill(key):
+            return f"[success]Custom skill '{key}' removed.[/success]"
+        return f"[warning]No custom skill found with key '{key}'.[/warning]"
+
+    def cmd_mcp_add(self, args):
+        if not args:
+            return "Usage: /mcp-add <key>\n\nExample: /mcp-add my-api\nThen follow the prompts."
+        key = args.strip().replace(" ", "-").lower()
+        name = Prompt.ask("MCP name")
+        description = Prompt.ask("Short description")
+        url = Prompt.ask("URL (leave blank if none)", default="")
+        usage = Prompt.ask("Usage instructions (how to call it)")
+        add_custom_mcp(key, name, description, url, usage)
+        return f"[success]Custom MCP '{key}' added![/success]"
+
+    def cmd_mcp_remove(self, args):
+        if not args:
+            return "Usage: /mcp-remove <key>"
+        key = args.strip().lower()
+        if remove_custom_mcp(key):
+            return f"[success]Custom MCP '{key}' removed.[/success]"
+        return f"[warning]No custom MCP found with key '{key}'.[/warning]"
+
     def cmd_quit(self, args):
         self.memory.save_all()
         raise SystemExit
@@ -1363,7 +1422,7 @@ def print_banner():
 [dim]Memory: ON | Learning: ON | Skills: {skills} | MCPs: {mcps} | Web: ON[/dim]
 
     [italic dim]Code anywhere. Anytime.[/italic dim]
-""".format(skills=len(SKILLS), mcps=len(MCP_SERVERS))
+""".format(skills=len(get_all_skills()), mcps=len(get_all_mcps()))
     console.print(banner)
 
 

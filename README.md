@@ -311,9 +311,20 @@ OWURA detects the tech stack and scaffolds a complete production project. You ca
 | `/privacy` | Privacy status |
 | `/compact` | Full cleanup |
 | `/clean` | Quick cache cleanup |
+| `/upgrade` | Check for and apply updates |
 | `/who` | About OWURA |
 | `/version` | Show version |
 | `/quit` | Exit |
+
+**Skills & MCPs**
+| Command | Description |
+|---------|-------------|
+| `/skills` | List all skills (built-in + custom) |
+| `/mcp` | List all MCPs (built-in + custom) |
+| `/skill-add <key>` | Add a custom skill with interactive prompts |
+| `/skill-remove <key>` | Remove a custom skill |
+| `/mcp-add <key>` | Add a custom MCP with interactive prompts |
+| `/mcp-remove <key>` | Remove a custom MCP |
 
 **Creative**
 | Command | Description |

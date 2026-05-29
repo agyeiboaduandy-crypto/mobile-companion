@@ -3,6 +3,12 @@ OWURA Skills - Reusable capabilities for building anything
 These skills help OWURA understand and execute coding tasks.
 """
 
+import json
+from pathlib import Path
+
+CUSTOM_SKILLS_FILE = Path.home() / ".owura" / "custom_skills.json"
+CUSTOM_MCPS_FILE = Path.home() / ".owura" / "custom_mcps.json"
+
 SKILLS = {
     "web-search": {
         "name": "Web Search",
@@ -247,31 +253,118 @@ curl -s "https://devdocs.io/python~3.11/" """,
     },
 }
 
+
+# ============================================================
+# CUSTOM SKILLS / MCPS - User-defined extensions
+# ============================================================
+def _load_custom_skills():
+    """Load user-defined skills from ~/.owura/custom_skills.json."""
+    if not CUSTOM_SKILLS_FILE.exists():
+        return {}
+    try:
+        with open(CUSTOM_SKILLS_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_custom_skills(skills):
+    """Save user-defined skills to ~/.owura/custom_skills.json."""
+    CUSTOM_SKILLS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(CUSTOM_SKILLS_FILE, "w") as f:
+        json.dump(skills, f, indent=2)
+
+def _load_custom_mcps():
+    """Load user-defined MCPs from ~/.owura/custom_mcps.json."""
+    if not CUSTOM_MCPS_FILE.exists():
+        return {}
+    try:
+        with open(CUSTOM_MCPS_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_custom_mcps(mcps):
+    """Save user-defined MCPs to ~/.owura/custom_mcps.json."""
+    CUSTOM_MCPS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    with open(CUSTOM_MCPS_FILE, "w") as f:
+        json.dump(mcps, f, indent=2)
+
+def get_all_skills():
+    """Return built-in + custom skills merged."""
+    merged = dict(SKILLS)
+    merged.update(_load_custom_skills())
+    return merged
+
+def get_all_mcps():
+    """Return built-in + custom MCPs merged."""
+    merged = dict(MCP_SERVERS)
+    merged.update(_load_custom_mcps())
+    return merged
+
+def add_custom_skill(key, name, description, triggers, prompt):
+    """Add or update a custom skill."""
+    skills = _load_custom_skills()
+    skills[key] = {
+        "name": name,
+        "description": description,
+        "trigger": triggers,
+        "prompt": prompt,
+    }
+    _save_custom_skills(skills)
+
+def remove_custom_skill(key):
+    """Remove a custom skill by key."""
+    skills = _load_custom_skills()
+    if key in skills:
+        del skills[key]
+        _save_custom_skills(skills)
+        return True
+    return False
+
+def add_custom_mcp(key, name, description, url="", usage=""):
+    """Add or update a custom MCP."""
+    mcps = _load_custom_mcps()
+    mcps[key] = {"name": name, "description": description, "url": url, "usage": usage}
+    _save_custom_mcps(mcps)
+
+def remove_custom_mcp(key):
+    """Remove a custom MCP by key."""
+    mcps = _load_custom_mcps()
+    if key in mcps:
+        del mcps[key]
+        _save_custom_mcps(mcps)
+        return True
+    return False
+
+
 def get_skill_help():
     """Get formatted help for all skills."""
     lines = ["## Available Skills\n"]
-    for key, skill in SKILLS.items():
-        lines.append(f"- **{skill['name']}** ({key}): {skill['description']}")
+    all_skills = get_all_skills()
+    for key, skill in all_skills.items():
+        marker = " (custom)" if key in _load_custom_skills() else ""
+        lines.append(f"- **{skill['name']}** ({key}{marker}): {skill['description']}")
     return "\n".join(lines)
 
 def get_mcp_help():
     """Get formatted help for all MCPs."""
     lines = ["## Available MCPs\n"]
-    for key, mcp in MCP_SERVERS.items():
-        lines.append(f"- **{mcp['name']}** ({key}): {mcp['description']}")
+    all_mcps = get_all_mcps()
+    for key, mcp in all_mcps.items():
+        marker = " (custom)" if key in _load_custom_mcps() else ""
+        lines.append(f"- **{mcp['name']}** ({key}{marker}): {mcp['description']}")
     return "\n".join(lines)
 
 def find_relevant_skill(user_input):
     """Find skills relevant to user input."""
     user_lower = user_input.lower()
     relevant = []
-    
-    for key, skill in SKILLS.items():
-        for trigger in skill["trigger"]:
+    all_skills = get_all_skills()
+    for key, skill in all_skills.items():
+        for trigger in skill.get("trigger", []):
             if trigger in user_lower:
                 relevant.append(skill)
                 break
-    
     return relevant
 
 def get_skill_context(user_input):
@@ -279,9 +372,9 @@ def get_skill_context(user_input):
     skills = find_relevant_skill(user_input)
     if not skills:
         return ""
-    
     context = "\n\n## Relevant Skills\n"
     for skill in skills:
-        context += f"\n### {skill['name']}\n{skill['prompt']}\n"
-    
+        prompt = skill.get("prompt", "")
+        if prompt:
+            context += f"\n### {skill['name']}\n{prompt}\n"
     return context
