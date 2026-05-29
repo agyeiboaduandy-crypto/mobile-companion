@@ -40,8 +40,10 @@ owura
 First run walks you through:
 1. Pick an AI provider (Gemini is free, no credit card)
 2. Enter your API key
-3. Select a model from those fetched from your provider
+3. Select a model from all available (fetched live from your provider)
 4. Start building
+
+Each launch checks for new OWURA versions — notifications appear automatically.
 
 ---
 
@@ -157,6 +159,8 @@ python3 ~/.owura/owura/app.py
 | **Web Tools** | Search, GitHub, PyPI, npm, StackOverflow, Wikipedia, weather |
 | **Caching** | Local response cache with auto-cleanup (7-day TTL) |
 | **Compaction** | Auto-cleanup of pip/npm/temp caches |
+| **Context Compaction** | Auto-summarizes conversation every 20 messages, keeps latest 10 |
+| **Self-Upgrade** | `/upgrade` — detects new versions and upgrades itself via git pull |
 | **Platforms** | Termux (Android), Linux, macOS |
 
 ### Scaffolding Features
@@ -252,9 +256,10 @@ OWURA detects the tech stack and scaffolds a complete production project. You ca
 **AI & Provider**
 | Command | Description |
 |---------|-------------|
-| `/provider [name]` | Set AI provider (interactive, fetches models) |
+| `/provider [name]` | Set AI provider (interactive, fetches all models) |
 | `/key [key]` | Set or view API key |
 | `/model [name]` | Set model manually |
+| `/upgrade` | Check for updates and upgrade OWURA itself |
 
 **Code & Files**
 | Command | Description |
