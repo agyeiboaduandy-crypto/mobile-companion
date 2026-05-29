@@ -116,7 +116,7 @@ def fetch_available_models(provider, api_key, base_url=""):
             with urllib.request.urlopen(req, timeout=15) as resp:
                 data = json.loads(resp.read().decode())
                 models = [m["name"].replace("models/", "") for m in data.get("models", [])]
-                models = [m for m in models if "generation" in m or "chat" in m or "gemini" in m]
+                models = [m for m in models if "generation" in m or "chat" in m or "gemini" in m or "gemma" in m]
                 return models
 
         api_base = base_url if base_url else PROVIDER_API_URLS.get(provider, "")
