@@ -453,64 +453,105 @@ class SmartSkills:
     # ============================================================
     def auto_detect_skill(self, user_input: str) -> str:
         """Automatically detect which skill to use."""
-        
+
         input_lower = user_input.lower()
-        
+
+        # Build / scaffold keywords
+        build_keywords = [
+            "build", "create", "make", "scaffold", "start a", "new project",
+            "twitter clone", "clone of", "ecommerce", "saas", "dashboard",
+            "api for", "backend for", "frontend for", "full stack",
+            "microservice", "rest api", "graphql api", "web app",
+            "mobile app", "crypto", "blockchain", "chat app",
+            "real-time", "realtime",
+        ]
+        if any(kw in input_lower for kw in build_keywords):
+            # Only trigger for build intent, not for code review/build commands
+            if not input_lower.startswith("/") and len(input_lower) > 10:
+                return "build"
+
         # Review keywords
         review_keywords = ["review", "check", "analyze", "quality", "lint", "improve"]
         if any(kw in input_lower for kw in review_keywords):
             return "review"
-        
+
         # Optimize keywords
         optimize_keywords = ["optimize", "performance", "speed", "faster", "efficient"]
         if any(kw in input_lower for kw in optimize_keywords):
             return "optimize"
-        
+
         # Reverse engineer keywords
         reverse_keywords = ["reverse", "explain", "decompile", "understand", "how does this work"]
         if any(kw in input_lower for kw in reverse_keywords):
             return "reverse"
-        
+
         # Loophole keywords
         loophole_keywords = ["loophole", "workaround", "impossible", "can't", "no way", "blocked", "forbidden", "denied", "bypass"]
         if any(kw in input_lower for kw in loophole_keywords):
             return "loophole"
-        
+
         # Fix impossible keywords
         fix_keywords = ["fix impossible", "make it work", "find a way", "creative solution"]
         if any(kw in input_lower for kw in fix_keywords):
             return "fix"
-        
+
         return None
     
     def handle_auto_skill(self, user_input: str, code: str = None) -> str:
         """Handle automatic skill detection and execution."""
-        
+
         skill = self.auto_detect_skill(user_input)
-        
+
+        if skill == "build":
+            from owura.pro import get_pro_tools
+            pro = get_pro_tools()
+            result = pro.build_from_description(user_input)
+            if result.get("success"):
+                path = result["path"]
+                template = result.get("template_used", "unknown")
+                lines = [
+                    f"**Project scaffolded at**: `{path}`",
+                    f"**Template**: {template}",
+                    "",
+                    "Includes:",
+                    "  - Multi-stage Docker build",
+                    "  - Docker Compose (app + PostgreSQL + Redis + Nginx)",
+                    "  - CI/CD pipeline (GitHub Actions)",
+                    "  - Structured JSON logging",
+                    "  - Rate limiting & security middleware",
+                    "  - Database with migrations",
+                    "  - Test suite with fixtures",
+                    "  - Health checks & monitoring",
+                    "  - Environment configuration",
+                    "",
+                    f"To run: `cd {path} && docker-compose up -d`",
+                ]
+                return "\n".join(lines)
+            return f"Could not scaffold project: {result.get('error', 'Unknown error')}"
+
         if skill == "review":
             if code:
                 return self.self_review(code=code)
             return "Provide code to review. Use: review this code: ```...```"
-        
+
         elif skill == "optimize":
             if code:
                 return self.self_optimize(code=code)
             return "Provide code to optimize. Use: optimize this code: ```...```"
-        
+
         elif skill == "reverse":
             return self.reverse_engineer(user_input, "code")
-        
+
         elif skill == "loophole":
             from owura.loophole import get_loophole
             loophole = get_loophole()
             return loophole.find_loopholes(user_input)
-        
+
         elif skill == "fix":
             from owura.loophole import get_loophole
             loophole = get_loophole()
             return loophole.fix_impossible(user_input)
-        
+
         return None
 
 # Global instance

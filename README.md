@@ -1,12 +1,12 @@
 # OWURA
 
-**AI Coding Agent for Mobile Terminal — Just describe, it builds.**
+**AI-Powered Terminal Coding Agent**
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.8+-green.svg)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20%2F%20Linux-yellow.svg)](https://termux.dev/)
 
-Build real, production-grade products from your phone. OWURA is a terminal-based AI coding assistant designed for **vibe coders** — people who describe what they want and watch it get built. No laptop required.
+A terminal-based AI coding agent that runs on mobile and desktop. Scaffolds production-grade projects, manages infrastructure, and helps you build real software — without needing a team of engineers to get started.
 
 ---
 
@@ -16,15 +16,15 @@ Build real, production-grade products from your phone. OWURA is a terminal-based
 - [Installation](#installation)
   - [Termux (Android) — One-Liner](#termux-android--one-liner)
   - [Linux / macOS](#linux--macos)
-  - [Manual Install (Most Reliable)](#manual-install-most-reliable)
-  - [Direct Python (Always Works)](#direct-python-always-works)
+  - [Manual Install](#manual-install)
+  - [Direct Python](#direct-python)
 - [Quick Start](#quick-start)
 - [Building Projects](#building-projects)
-  - [Just Describe It](#just-describe-it)
+  - [From a Description](#from-a-description)
   - [Available Templates](#available-templates)
 - [Commands](#commands)
 - [Providers](#providers)
-- [What You Get When You Build](#what-you-get-when-you-build)
+- [What Gets Scaffolded](#what-gets-scaffolded)
 - [Troubleshooting](#troubleshooting)
 - [Uninstall](#uninstall)
 - [License](#license)
@@ -33,14 +33,13 @@ Build real, production-grade products from your phone. OWURA is a terminal-based
 
 ## What is OWURA?
 
-OWURA is not a toy. It's a **production-grade project generator** that lives in your terminal:
+OWURA is a terminal-based AI coding agent designed to help anyone build real software — from simple scripts to full production systems. It runs on Android (Termux), Linux, and macOS.
 
 - **Describe what you want**: `/build a Twitter clone with Next.js and PostgreSQL`
-- **It scaffolds the entire project**: Docker, CI/CD, database, auth, tests, monitoring — everything
+- **It scaffolds the entire project**: Docker, CI/CD, database, auth, tests, monitoring
 - **You just run it**: `docker-compose up -d`
-- **No config, no setup, no hassle**
 
-Built for Termux on Android. Works on any Linux system.
+Works on mobile via Termux, or on any Linux system.
 
 ---
 
@@ -123,9 +122,7 @@ First run walks you through:
 
 ## Building Projects
 
-### Just Describe It
-
-This is the main feature. Tell OWURA what you want in plain English:
+### From a Description
 
 ```bash
 /build a Twitter clone with Next.js and PostgreSQL
@@ -135,10 +132,7 @@ This is the main feature. Tell OWURA what you want in plain English:
 /build a microservice for user authentication
 ```
 
-OWURA automatically:
-1. **Detects the best tech stack** from your description
-2. **Scaffolds a complete project** with production-grade structure
-3. **Includes everything you need**: Docker, CI/CD, database, tests, monitoring
+OWURA detects the right tech stack from your description and scaffolds a complete production project:
 
 ### Available Templates
 
@@ -154,9 +148,9 @@ OWURA automatically:
 /create rust-cli my-tool        # Rust CLI (cargo)
 ```
 
-### What Every Production Template Includes
+### What Gets Scaffolded
 
-Every project scaffolded by `/build` or `/create` comes with:
+Every project from `/build` or `/create` includes:
 
 | Feature | What you get |
 |---------|-------------|
