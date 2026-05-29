@@ -1311,7 +1311,28 @@ def main():
             with console.status("[muted]Thinking...[/muted]"):
                 response = processor.process(user_input)
 
-            processor.compactor.auto_compact()
+            msg_count = len(processor.history)
+            if msg_count > 0 and msg_count % 20 == 0:
+                with console.status("[muted]Compacting conversation context...[/muted]"):
+                    prev = processor.memory.get_compacted_context() or ""
+                    prompt = (
+                        "Summarize our conversation so far into a concise context paragraph. "
+                        "Include key facts, preferences, decisions, and what we're building. "
+                        "Keep it under 200 words."
+                    )
+                    if prev:
+                        prompt = (
+                            f"Previous summary: {prev}\n\n"
+                            "Update this summary with anything new from our recent conversation. "
+                            "Keep it concise and under 200 words."
+                        )
+                    new_summary = processor.ai.chat(prompt)
+                    if new_summary:
+                        processor.memory.set_compacted_context(new_summary)
+                    trimmed = processor.history[-10:]
+                    processor.history.clear()
+                    processor.history.extend(trimmed)
+                console.print("[dim]Context compacted (last 10 messages kept)[/dim]")
 
             if response:
                 console.print()

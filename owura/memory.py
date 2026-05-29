@@ -251,6 +251,15 @@ class Memory:
         """Clear current context."""
         self.memory["context"] = {}
         self.save_all()
+
+    def set_compacted_context(self, summary: str):
+        """Store a compacted conversation summary."""
+        self.memory["context"]["compacted"] = summary
+        self.save_all()
+
+    def get_compacted_context(self) -> Optional[str]:
+        """Retrieve the compacted conversation summary."""
+        return self.memory["context"].get("compacted")
     
     # ============================================================
     # SEARCH - Find relevant memories
@@ -304,7 +313,12 @@ class Memory:
         project_ctx = self.get_project_context()
         if project_ctx:
             parts.append(project_ctx)
-        
+
+        # Compacted conversation summary
+        compacted = self.get_compacted_context()
+        if compacted:
+            parts.append(f"## Conversation Summary\n{compacted}")
+
         return "\n\n".join(parts) if parts else None
 
 # Global memory instance
