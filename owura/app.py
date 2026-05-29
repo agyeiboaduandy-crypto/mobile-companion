@@ -10,6 +10,7 @@ import json
 import hashlib
 import re
 import subprocess
+import shutil
 from pathlib import Path
 from datetime import datetime
 
@@ -184,7 +185,7 @@ def _parse_version(ver_str):
         return (0, 0, 0)
 
 def check_for_updates():
-    """Check GitHub for a newer version. Returns (latest_version, upgrade_cmd) or None."""
+    """Check GitHub for a newer version. Returns latest version string or None."""
     import urllib.request
     from owura import __version__ as current_ver
     current = _parse_version(current_ver)
@@ -199,10 +200,72 @@ def check_for_updates():
         latest_str = m.group(1)
         latest = _parse_version(latest_str)
         if latest > current:
-            return (latest_str, "curl -fsSL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/install.sh | bash")
+            return latest_str
     except Exception:
         pass
     return None
+
+
+# ============================================================
+# SELF-UPGRADE
+# ============================================================
+def get_owura_root():
+    """Find the OWURA installation root directory."""
+    app_path = Path(__file__).resolve()
+    return app_path.parent.parent  # owura/app.py -> owura/ -> root
+
+def is_git_install(root):
+    """Check if OWURA was installed via git."""
+    return (root / ".git").exists()
+
+def do_upgrade():
+    """Perform self-upgrade. Returns (success, message)."""
+    import subprocess
+    root = get_owura_root()
+    home_owura = Path.home() / ".owura"
+    repo_url = "https://github.com/agyeiboaduandy-crypto/owura.git"
+
+    if not shutil.which("git"):
+        return (False, "git is not installed. Install git and try again, or run:\ncurl -fsSL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/install.sh | bash")
+
+    try:
+        if is_git_install(root):
+            result = subprocess.run(
+                ["git", "-C", str(root), "pull", "--ff-only"],
+                capture_output=True, text=True, timeout=60
+            )
+            if result.returncode != 0:
+                return (False, f"Git pull failed:\n{result.stderr}")
+            msg = result.stdout.strip()
+        else:
+            if home_owura.exists():
+                shutil.rmtree(home_owura)
+            result = subprocess.run(
+                ["git", "clone", repo_url, str(home_owura)],
+                capture_output=True, text=True, timeout=120
+            )
+            if result.returncode != 0:
+                return (False, f"Clone failed:\n{result.stderr}")
+            msg = "Fresh clone complete"
+
+        req_file = root / "requirements.txt"
+        if req_file.exists():
+            result = subprocess.run(
+                [sys.executable, "-m", "pip", "install", "-r", str(req_file), "--quiet", "--upgrade", "--user"],
+                capture_output=True, text=True, timeout=60
+            )
+            if result.returncode != 0:
+                subprocess.run(
+                    [sys.executable, "-m", "pip", "install", "-r", str(req_file), "--quiet", "--upgrade", "--break-system-packages"],
+                    capture_output=True, timeout=60
+                )
+
+        from owura import __version__
+        return (True, f"Upgraded to v{__version__}\n{msg}")
+    except subprocess.TimeoutExpired:
+        return (False, "Upgrade timed out")
+    except Exception as e:
+        return (False, f"Upgrade error: {e}")
 
 
 # ============================================================
@@ -456,7 +519,6 @@ class CommandProcessor:
         self.history = []
 
     @staticmethod
-    @staticmethod
     def _select_model(models):
         """Show all models and let user select by number or name."""
         if not models:
@@ -581,6 +643,7 @@ class CommandProcessor:
             "/mission": self.cmd_mission,
             "/why": self.cmd_why,
             "/version": self.cmd_version,
+            "/upgrade": self.cmd_upgrade,
             "/quit": self.cmd_quit,
             "/exit": self.cmd_quit,
             "/q": self.cmd_quit,
@@ -610,6 +673,7 @@ class CommandProcessor:
 | `/provider [name]` | Set AI provider — interactive, fetches models live from API (15+ providers) |
 | `/model <name>` | Set AI model |
 | `/key <api_key>` | Set API key |
+| `/upgrade` | Check for and apply updates |
 
 ### Files & Code
 | Command | Description |
@@ -1261,6 +1325,23 @@ Because your phone is powerful enough to build the future.
         from owura import __version__
         return f"OWURA v{__version__} - AI Coding Agent"
 
+    def cmd_upgrade(self, args):
+        latest_ver = check_for_updates()
+        if latest_ver:
+            from owura import __version__
+            console.print(f"[info]v{latest_ver} available (you have v{__version__})[/info]")
+            if Confirm.ask("Upgrade now?"):
+                with console.status("[info]Upgrading...[/info]"):
+                    success, msg = do_upgrade()
+                if success:
+                    console.print(f"[success]{msg}[/success]")
+                    if Confirm.ask("Restart to apply changes?"):
+                        self.cmd_quit(args)
+                else:
+                    console.print(f"[error]{msg}[/error]")
+        else:
+            console.print("[green]You're on the latest version![/green]")
+
     def cmd_quit(self, args):
         self.memory.save_all()
         raise SystemExit
@@ -1331,15 +1412,13 @@ def main():
         console.print(f"[muted]Memory: {len(memory.memory['facts'])} facts, {len(memory.learnings)} learnings loaded[/muted]")
 
     update_notified = memory.get_context("update_notified")
-    result = check_for_updates()
-    if result:
-        latest_ver, upgrade_cmd = result
+    latest_ver = check_for_updates()
+    if latest_ver:
         if not update_notified or _parse_version(update_notified) < _parse_version(latest_ver):
             console.print()
             console.print(Panel(
                 f"[bold]v{latest_ver} available![/bold] (you have v{__import__('owura').__version__})\n\n"
-                f"Upgrade: [green]{upgrade_cmd}[/green]\n"
-                f"Or: [green]pip install --upgrade owura[/green]",
+                f"Type [green]/upgrade[/green] to update.",
                 title="[bold yellow]Update Available[/bold yellow]",
                 border_style="yellow"
             ))
