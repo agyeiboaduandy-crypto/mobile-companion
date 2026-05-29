@@ -69,6 +69,44 @@ console = Console(theme=THEME)
 
 
 # ============================================================
+# MODEL FETCHING
+# ============================================================
+def fetch_available_models(provider, api_key, base_url=""):
+    """Fetch available models from a provider's API. Returns list of model IDs or None on failure."""
+    import urllib.request
+    try:
+        if provider == "gemini":
+            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={api_key}"
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode())
+                models = [m["name"].replace("models/", "") for m in data.get("models", [])]
+                models = [m for m in models if "generation" in m or "chat" in m or "gemini" in m]
+                return models
+
+        elif provider in ("openai", "groq", "nvidia") or base_url:
+            urls = {
+                "openai": "https://api.openai.com/v1/models",
+                "groq": "https://api.groq.com/openai/v1/models",
+                "nvidia": "https://integrate.api.nvidia.com/v1/models",
+            }
+            url = base_url.rstrip("/") + "/models" if base_url else urls.get(provider, "")
+            if not url:
+                return None
+            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {api_key}"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode())
+                models = [m["id"] for m in data.get("data", [])]
+                if not models:
+                    models = [m["id"] for m in data.get("models", [])]
+                return models
+
+        return None
+    except Exception:
+        return None
+
+
+# ============================================================
 # CONFIGURATION
 # ============================================================
 class Config:
@@ -337,6 +375,7 @@ class CommandProcessor:
             "/provider": self.cmd_provider,
             "/model": self.cmd_model,
             "/key": self.cmd_key,
+            "/build": self.cmd_build,
             "/clear": self.cmd_clear,
             "/history": self.cmd_history,
             "/run": self.cmd_run,
@@ -429,7 +468,7 @@ class CommandProcessor:
 ### AI & Providers
 | Command | Description |
 |---------|-------------|
-| `/provider <name>` | Set AI provider (gemini/openai/groq/nvidia/custom) |
+| `/provider [name]` | Set AI provider - interactive (fetches models from API) |
 | `/model <name>` | Set AI model |
 | `/key <api_key>` | Set API key |
 
@@ -504,34 +543,67 @@ class CommandProcessor:
         return None
 
     def cmd_provider(self, args):
-        if not args:
-            return """Available providers:
-  gemini   - Google AI Studio (free tier)
-  openai   - OpenAI
-  groq     - Groq (fast inference)
-  nvidia   - NVIDIA NIM
-  custom   - Any OpenAI-compatible API
-
-Usage: /provider gemini
-       /provider custom https://api.together.xyz/v1"""
-        parts = args.split(maxsplit=1)
-        provider = parts[0].lower()
-        base_url = parts[1] if len(parts) > 1 else ""
         valid = ["gemini", "openai", "groq", "nvidia", "custom"]
-        if provider not in valid:
-            return f"Invalid provider. Choose from: {', '.join(valid)}"
-        if provider == "custom" and not base_url:
-            return "Usage: /provider custom <base_url>"
+        if args:
+            parts = args.split(maxsplit=1)
+            provider = parts[0].lower()
+            base_url = parts[1] if len(parts) > 1 else ""
+            if provider not in valid:
+                return f"Invalid provider. Choose from: {', '.join(valid)}"
+            if provider == "custom" and not base_url:
+                return "Usage: /provider custom <base_url>"
+        else:
+            console.print("[info]Available providers:[/info]")
+            for i, p in enumerate(valid, 1):
+                console.print(f"  [cyan]{i}.[/cyan] {p}")
+            choice = Prompt.ask("Select provider", choices=[str(i) for i in range(1, len(valid)+1)] + valid, default="1")
+            if choice.isdigit():
+                provider = valid[int(choice)-1]
+            else:
+                provider = choice.lower()
+            base_url = ""
+            if provider == "custom":
+                base_url = Prompt.ask("Enter API base URL (e.g., https://api.together.xyz/v1)").rstrip("/")
+                if not base_url:
+                    return "Base URL required for custom provider"
+
         self.config.set("provider", provider)
         if base_url:
             self.config.set("base_url", base_url)
-        defaults = {
-            "gemini": "gemini-2.0-flash", "openai": "gpt-4",
-            "groq": "llama3-70b-8192", "nvidia": "meta/llama-3.1-70b-instruct", "custom": "default",
-        }
-        self.config.set("model", defaults.get(provider, "default"))
         self.memory.set_preference("provider", provider)
-        return f"Provider set to {provider}. Model: {self.config.get('model')}"
+
+        api_key = self.config.get("api_key") or ""
+        if not api_key:
+            api_key = Prompt.ask(f"Enter your {provider} API key", password=True)
+            self.config.set("api_key", api_key)
+        else:
+            if not args:
+                change = Confirm.ask(f"Keep existing API key?", default=True)
+                if not change:
+                    api_key = Prompt.ask(f"Enter your {provider} API key", password=True)
+                    self.config.set("api_key", api_key)
+
+        models = fetch_available_models(provider, api_key, base_url)
+        if models:
+            console.print(f"[info]Found {len(models)} available models. Select one:[/info]")
+            for i, m in enumerate(models[:30], 1):
+                console.print(f"  [cyan]{i}.[/cyan] {m}")
+            current_model = self.config.get("model", "")
+            default_idx = "1"
+            if current_model in models:
+                default_idx = str(models.index(current_model) + 1)
+            model_choices = [str(i) for i in range(1, min(len(models), 30)+1)] + models[:30]
+            model_choice = Prompt.ask("Select model", choices=model_choices, default=default_idx)
+            if model_choice.isdigit():
+                selected = models[int(model_choice)-1]
+            else:
+                selected = model_choice
+            self.config.set("model", selected)
+            return f"Provider set to [bold]{provider}[/bold]. Model: [bold]{selected}[/bold]"
+        else:
+            model = Prompt.ask("Could not fetch models. Enter model name manually")
+            self.config.set("model", model)
+            return f"Provider set to [bold]{provider}[/bold]. Model: [bold]{model}[/bold] (manual)"
 
     def cmd_model(self, args):
         if not args:
@@ -775,6 +847,36 @@ Usage: /provider gemini
         if result.get("success"):
             return f"Project created at: {result['path']}"
         return f"Error: {result.get('error', 'Unknown error')}"
+
+    def cmd_build(self, args):
+        if not args:
+            return "Usage: /build <description>\n\nExample: /build a Twitter clone with Next.js and PostgreSQL\n\nJust describe what you want to build — I'll scaffold a complete production-grade project."
+        with console.status("[info]Analyzing description and scaffolding project...[/info]"):
+            pro = get_pro_tools()
+            result = pro.build_from_description(args)
+        if result.get("success"):
+            template = result.get("template_used", "unknown")
+            path = result["path"]
+            msg = [
+                f"[success]Project built successfully![/success]",
+                f"[info]Template:[/info] {template}",
+                f"[info]Path:[/info] {path}",
+                f"",
+                f"[bold]What's included:[/bold]",
+                f"  - Multi-stage Docker build",
+                f"  - Docker Compose (app + PostgreSQL + Redis + Nginx)",
+                f"  - CI/CD pipeline (GitHub Actions)",
+                f"  - Structured JSON logging",
+                f"  - Rate limiting & security middleware",
+                f"  - Database with migrations",
+                f"  - Test suite with fixtures",
+                f"  - Health checks & monitoring",
+                f"  - Environment configuration",
+                f"",
+                f"[muted]Run: cd {path} && docker-compose up -d[/muted]",
+            ]
+            return "\n".join(msg)
+        return f"Error building project: {result.get('error', 'Unknown error')}"
 
     def cmd_analyze(self, args):
         pro = get_pro_tools()
@@ -1068,20 +1170,42 @@ def main():
     if not config.get("api_key"):
         console.print("[bold]Welcome to OWURA![/bold]")
         console.print("[info]Let's set up your AI provider.[/info]\n")
-        console.print("[muted]Available providers:[/muted]")
-        console.print("  [cyan]gemini[/cyan]  - Google Gemini (free tier)")
-        console.print("  [cyan]openai[/cyan]  - OpenAI GPT-4")
-        console.print("  [cyan]groq[/cyan]    - Groq (fast)")
-        console.print("  [cyan]nvidia[/cyan]  - NVIDIA NIM")
-        console.print("  [cyan]custom[/cyan]  - Any OpenAI-compatible API\n")
 
-        provider = Prompt.ask("Choose provider", choices=["gemini", "openai", "groq", "nvidia", "custom"], default="gemini")
+        valid = ["gemini", "openai", "groq", "nvidia", "custom"]
+        console.print("[muted]Available providers:[/muted]")
+        for i, p in enumerate(valid, 1):
+            console.print(f"  [cyan]{i}.[/cyan] {p}")
+        choice = Prompt.ask("Choose provider", choices=[str(i) for i in range(1, len(valid)+1)] + valid, default="1")
+        if choice.isdigit():
+            provider = valid[int(choice)-1]
+        else:
+            provider = choice.lower()
         config.set("provider", provider)
-        defaults = {"gemini": "gemini-2.0-flash", "openai": "gpt-4", "groq": "llama3-70b-8192", "nvidia": "meta/llama-3.1-70b-instruct", "custom": "default"}
-        config.set("model", defaults.get(provider, "default"))
+
+        base_url = ""
         if provider == "custom":
-            config.set("base_url", Prompt.ask("Enter API base URL (e.g., https://api.together.xyz/v1)"))
-        config.set("api_key", Prompt.ask(f"Enter your {provider} API key"))
+            base_url = Prompt.ask("Enter API base URL (e.g., https://api.together.xyz/v1)").rstrip("/")
+            if base_url:
+                config.set("base_url", base_url)
+
+        api_key = Prompt.ask(f"Enter your {provider} API key", password=True)
+        config.set("api_key", api_key)
+
+        models = fetch_available_models(provider, api_key, base_url)
+        if models:
+            console.print(f"[info]Found {len(models)} available models. Select one:[/info]")
+            for i, m in enumerate(models[:30], 1):
+                console.print(f"  [cyan]{i}.[/cyan] {m}")
+            model_choices = [str(i) for i in range(1, min(len(models), 30)+1)] + models[:30]
+            model_choice = Prompt.ask("Select model", choices=model_choices, default="1")
+            if model_choice.isdigit():
+                config.set("model", models[int(model_choice)-1])
+            else:
+                config.set("model", model_choice)
+        else:
+            model = Prompt.ask("Could not fetch models. Enter model name manually")
+            config.set("model", model)
+
         memory.set_preference("provider", provider)
         console.print("[success]Configuration saved![/success]\n")
 
