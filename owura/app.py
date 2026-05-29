@@ -174,6 +174,38 @@ def fetch_available_models(provider, api_key, base_url=""):
 
 
 # ============================================================
+# UPDATE CHECK
+# ============================================================
+def _parse_version(ver_str):
+    """Parse '1.2.3' into (1, 2, 3) tuple for comparison."""
+    try:
+        return tuple(int(x) for x in ver_str.strip().split("."))
+    except Exception:
+        return (0, 0, 0)
+
+def check_for_updates():
+    """Check GitHub for a newer version. Returns (latest_version, upgrade_cmd) or None."""
+    import urllib.request
+    from owura import __version__ as current_ver
+    current = _parse_version(current_ver)
+    try:
+        url = "https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/owura/__init__.py"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            content = resp.read().decode()
+        m = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
+        if not m:
+            return None
+        latest_str = m.group(1)
+        latest = _parse_version(latest_str)
+        if latest > current:
+            return (latest_str, "curl -fsSL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/install.sh | bash")
+    except Exception:
+        pass
+    return None
+
+
+# ============================================================
 # CONFIGURATION
 # ============================================================
 class Config:
@@ -1297,6 +1329,21 @@ def main():
 
     if config.get("memory_enabled") and memory.memory.get("facts"):
         console.print(f"[muted]Memory: {len(memory.memory['facts'])} facts, {len(memory.learnings)} learnings loaded[/muted]")
+
+    update_notified = memory.get_context("update_notified")
+    result = check_for_updates()
+    if result:
+        latest_ver, upgrade_cmd = result
+        if not update_notified or _parse_version(update_notified) < _parse_version(latest_ver):
+            console.print()
+            console.print(Panel(
+                f"[bold]v{latest_ver} available![/bold] (you have v{__import__('owura').__version__})\n\n"
+                f"Upgrade: [green]{upgrade_cmd}[/green]\n"
+                f"Or: [green]pip install --upgrade owura[/green]",
+                title="[bold yellow]Update Available[/bold yellow]",
+                border_style="yellow"
+            ))
+            memory.set_context("update_notified", latest_ver)
 
     console.print("[muted]Type /help for commands, /quit to exit[/muted]\n")
 
