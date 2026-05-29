@@ -71,6 +71,41 @@ console = Console(theme=THEME)
 # ============================================================
 # MODEL FETCHING
 # ============================================================
+PROVIDER_API_URLS = {
+    "openai": "https://api.openai.com/v1",
+    "groq": "https://api.groq.com/openai/v1",
+    "nvidia": "https://integrate.api.nvidia.com/v1",
+    "together": "https://api.together.xyz/v1",
+    "openrouter": "https://openrouter.ai/api/v1",
+    "deepseek": "https://api.deepseek.com/v1",
+    "mistral": "https://api.mistral.ai/v1",
+    "perplexity": "https://api.perplexity.ai",
+    "fireworks": "https://api.fireworks.ai/inference/v1",
+    "cohere": "https://api.cohere.ai/v1",
+    "xai": "https://api.x.ai/v1",
+    "github": "https://models.inference.ai.azure.com",
+    "anthropic": "https://api.anthropic.com/v1",
+}
+
+PROVIDER_NAMES = {
+    "gemini": "Google Gemini",
+    "openai": "OpenAI",
+    "groq": "Groq",
+    "nvidia": "NVIDIA NIM",
+    "together": "Together AI",
+    "openrouter": "OpenRouter",
+    "deepseek": "DeepSeek",
+    "mistral": "Mistral AI",
+    "perplexity": "Perplexity",
+    "fireworks": "Fireworks AI",
+    "cohere": "Cohere",
+    "xai": "xAI (Grok)",
+    "github": "GitHub Models",
+    "anthropic": "Anthropic",
+    "custom": "Custom (OpenAI-compatible)",
+}
+
+
 def fetch_available_models(provider, api_key, base_url=""):
     """Fetch available models from a provider's API. Returns list of model IDs or None on failure."""
     import urllib.request
@@ -84,24 +119,30 @@ def fetch_available_models(provider, api_key, base_url=""):
                 models = [m for m in models if "generation" in m or "chat" in m or "gemini" in m]
                 return models
 
-        elif provider in ("openai", "groq", "nvidia") or base_url:
-            urls = {
-                "openai": "https://api.openai.com/v1/models",
-                "groq": "https://api.groq.com/openai/v1/models",
-                "nvidia": "https://integrate.api.nvidia.com/v1/models",
-            }
-            url = base_url.rstrip("/") + "/models" if base_url else urls.get(provider, "")
-            if not url:
-                return None
-            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {api_key}"})
+        api_base = base_url if base_url else PROVIDER_API_URLS.get(provider, "")
+        if not api_base:
+            return None
+
+        if provider == "anthropic" and not base_url:
+            url = f"{api_base}/models"
+            req = urllib.request.Request(url, headers={
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+            })
             with urllib.request.urlopen(req, timeout=15) as resp:
                 data = json.loads(resp.read().decode())
                 models = [m["id"] for m in data.get("data", [])]
-                if not models:
-                    models = [m["id"] for m in data.get("models", [])]
                 return models
 
-        return None
+        url = api_base.rstrip("/") + "/models"
+        req = urllib.request.Request(url, headers={"Authorization": f"Bearer {api_key}"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+            models = [m["id"] for m in data.get("data", [])]
+            if not models:
+                models = [m["id"] for m in data.get("models", [])]
+            return models
+
     except Exception:
         return None
 
@@ -269,9 +310,18 @@ You are optimized for mobile terminal use on Android via Termux.
     def _call_openai_compatible(self, message, api_key, system_prompt, provider, base_url=""):
         import urllib.request
         model_defaults = {
-            "openai": ("gpt-4", "https://api.openai.com/v1/chat/completions"),
-            "groq": ("llama3-70b-8192", "https://api.groq.com/openai/v1/chat/completions"),
+            "openai": ("gpt-4o", "https://api.openai.com/v1/chat/completions"),
+            "groq": ("llama-3.3-70b-versatile", "https://api.groq.com/openai/v1/chat/completions"),
             "nvidia": ("meta/llama-3.1-70b-instruct", "https://integrate.api.nvidia.com/v1/chat/completions"),
+            "together": ("mistralai/Mixtral-8x7B-Instruct-v0.1", "https://api.together.xyz/v1/chat/completions"),
+            "openrouter": ("mistralai/mistral-7b-instruct", "https://openrouter.ai/api/v1/chat/completions"),
+            "deepseek": ("deepseek-chat", "https://api.deepseek.com/v1/chat/completions"),
+            "mistral": ("mistral-small-latest", "https://api.mistral.ai/v1/chat/completions"),
+            "perplexity": ("llama-3-sonar-small-32k-chat", "https://api.perplexity.ai/chat/completions"),
+            "fireworks": ("accounts/fireworks/models/llama-v3p1-8b-instruct", "https://api.fireworks.ai/inference/v1/chat/completions"),
+            "cohere": ("command-r-plus", "https://api.cohere.ai/v1/chat/completions"),
+            "xai": ("grok-beta", "https://api.x.ai/v1/chat/completions"),
+            "github": ("gpt-4o", "https://models.inference.ai.azure.com/chat/completions"),
         }
         default_model, default_url = model_defaults.get(provider, ("default", base_url))
         model = self.config.get("model", default_model)
@@ -468,7 +518,7 @@ class CommandProcessor:
 ### AI & Providers
 | Command | Description |
 |---------|-------------|
-| `/provider [name]` | Set AI provider - interactive (fetches models from API) |
+| `/provider [name]` | Set AI provider — interactive, fetches models live from API (15+ providers) |
 | `/model <name>` | Set AI model |
 | `/key <api_key>` | Set API key |
 
@@ -543,7 +593,9 @@ class CommandProcessor:
         return None
 
     def cmd_provider(self, args):
-        valid = ["gemini", "openai", "groq", "nvidia", "custom"]
+        valid = ["gemini", "openai", "groq", "nvidia", "together", "openrouter",
+                 "deepseek", "mistral", "perplexity", "fireworks", "cohere",
+                 "xai", "github", "anthropic", "custom"]
         if args:
             parts = args.split(maxsplit=1)
             provider = parts[0].lower()
@@ -555,7 +607,8 @@ class CommandProcessor:
         else:
             console.print("[info]Available providers:[/info]")
             for i, p in enumerate(valid, 1):
-                console.print(f"  [cyan]{i}.[/cyan] {p}")
+                name = PROVIDER_NAMES.get(p, p)
+                console.print(f"  [cyan]{i}.[/cyan] {name}")
             choice = Prompt.ask("Select provider", choices=[str(i) for i in range(1, len(valid)+1)] + valid, default="1")
             if choice.isdigit():
                 provider = valid[int(choice)-1]
@@ -1171,10 +1224,13 @@ def main():
         console.print("[bold]Welcome to OWURA![/bold]")
         console.print("[info]Let's set up your AI provider.[/info]\n")
 
-        valid = ["gemini", "openai", "groq", "nvidia", "custom"]
+        valid = ["gemini", "openai", "groq", "nvidia", "together", "openrouter",
+                 "deepseek", "mistral", "perplexity", "fireworks", "cohere",
+                 "xai", "github", "anthropic", "custom"]
         console.print("[muted]Available providers:[/muted]")
         for i, p in enumerate(valid, 1):
-            console.print(f"  [cyan]{i}.[/cyan] {p}")
+            name = PROVIDER_NAMES.get(p, p)
+            console.print(f"  [cyan]{i}.[/cyan] {name}")
         choice = Prompt.ask("Choose provider", choices=[str(i) for i in range(1, len(valid)+1)] + valid, default="1")
         if choice.isdigit():
             provider = valid[int(choice)-1]

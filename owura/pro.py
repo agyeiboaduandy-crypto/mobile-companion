@@ -1373,38 +1373,38 @@ export async function connectRedis(): Promise<void> {
 export { redis };
 ''')
 
-        (path / "src/middleware/error.ts").write_text(f'''import {{ Request, Response, NextFunction }} from "express";
-import { logger }} from "../config/logger";
+        (path / "src/middleware/error.ts").write_text('''import { Request, Response, NextFunction } from "express";
+import { logger } from "../config/logger";
 
-export class AppError extends Error {{
+export class AppError extends Error {
   statusCode: number;
   code: string;
 
-  constructor(message: string, statusCode: number = 500, code: string = "INTERNAL_ERROR") {{
+  constructor(message: string, statusCode: number = 500, code: string = "INTERNAL_ERROR") {
     super(message);
     this.statusCode = statusCode;
     this.code = code;
-  }}
-}}
+  }
+}
 
 export function errorHandler(
   err: Error,
   _req: Request,
   res: Response,
   _next: NextFunction
-): void {{
-  if (err instanceof AppError) {{
-    res.status(err.statusCode).json({{
-      error: {{ code: err.code, message: err.message }},
-    }});
+): void {
+  if (err instanceof AppError) {
+    res.status(err.statusCode).json({
+      error: { code: err.code, message: err.message },
+    });
     return;
-  }}
+  }
 
   logger.error("Unhandled error", err);
-  res.status(500).json({{
-    error: {{ code: "INTERNAL_ERROR", message: "Internal server error" }},
-  }});
-}}
+  res.status(500).json({
+    error: { code: "INTERNAL_ERROR", message: "Internal server error" },
+  });
+}
 ''')
 
         (path / "src/middleware/logger.ts").write_text('''import { Request, Response, NextFunction } from "express";
@@ -1435,81 +1435,81 @@ router.get("/", (_req: Request, res: Response) => {
 export default router;
 ''')
 
-        (path / "src/routes/items.ts").write_text(f'''import {{ Router, Request, Response, NextFunction }} from "express";
-import { z }} from "zod";
-import { AppError }} from "../middleware/error";
+        (path / "src/routes/items.ts").write_text('''import { Router, Request, Response, NextFunction } from "express";
+import { z } from "zod";
+import { AppError } from "../middleware/error";
 
 const router = Router();
 
-interface Item {{
+interface Item {
   id: number;
   name: string;
   description?: string;
   price: number;
   createdAt: Date;
-}}
+}
 
 const items: Item[] = [];
 let nextId = 1;
 
-const createItemSchema = z.object({{
+const createItemSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().optional(),
   price: z.number().positive(),
-}});
+});
 
-router.get("/", (_req: Request, res: Response) => {{
-  res.json({{ data: items, total: items.length }});
-}});
+router.get("/", (_req: Request, res: Response) => {
+  res.json({ data: items, total: items.length });
+});
 
-router.post("/", (req: Request, res: Response, next: NextFunction) => {{
-  try {{
+router.post("/", (req: Request, res: Response, next: NextFunction) => {
+  try {
     const data = createItemSchema.parse(req.body);
-    const item: Item = {{
+    const item: Item = {
       id: nextId++,
       ...data,
       createdAt: new Date(),
-    }};
+    };
     items.push(item);
-    res.status(201).json({{ data: item }});
-  }} catch (err) {{
+    res.status(201).json({ data: item });
+  } catch (err) {
     next(new AppError("Validation failed", 400, "VALIDATION_ERROR"));
-  }}
-}});
+  }
+});
 
-router.get("/:id", (req: Request, res: Response, next: NextFunction) => {{
+router.get("/:id", (req: Request, res: Response, next: NextFunction) => {
   const id = parseInt(req.params.id);
   const item = items.find((i) => i.id === id);
-  if (!item) {{
+  if (!item) {
     return next(new AppError("Item not found", 404, "NOT_FOUND"));
-  }}
-  res.json({{ data: item }});
-}});
+  }
+  res.json({ data: item });
+});
 
-router.put("/:id", (req: Request, res: Response, next: NextFunction) => {{
+router.put("/:id", (req: Request, res: Response, next: NextFunction) => {
   const id = parseInt(req.params.id);
   const idx = items.findIndex((i) => i.id === id);
-  if (idx === -1) {{
+  if (idx === -1) {
     return next(new AppError("Item not found", 404, "NOT_FOUND"));
-  }}
-  try {{
+  }
+  try {
     const data = createItemSchema.partial().parse(req.body);
-    items[idx] = {{ ...items[idx], ...data }};
-    res.json({{ data: items[idx] }});
-  }} catch {{
+    items[idx] = { ...items[idx], ...data };
+    res.json({ data: items[idx] });
+  } catch {
     next(new AppError("Validation failed", 400, "VALIDATION_ERROR"));
-  }}
-}});
+  }
+});
 
-router.delete("/:id", (req: Request, res: Response, next: NextFunction) => {{
+router.delete("/:id", (req: Request, res: Response, next: NextFunction) => {
   const id = parseInt(req.params.id);
   const idx = items.findIndex((i) => i.id === id);
-  if (idx === -1) {{
+  if (idx === -1) {
     return next(new AppError("Item not found", 404, "NOT_FOUND"));
-  }}
+  }
   items.splice(idx, 1);
   res.status(204).send();
-}});
+});
 
 export default router;
 ''')

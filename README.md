@@ -272,15 +272,36 @@ Every project scaffolded by `/build` or `/create` comes with:
 
 ## Providers
 
-| Provider | Free Tier | How to get key |
-|----------|-----------|---------------|
-| **Gemini** | ✅ Yes | https://aistudio.google.com/apikey |
-| **Groq** | ✅ Yes | https://console.groq.com/keys |
-| **NVIDIA** | ✅ Yes | https://build.nvidia.com/ |
-| **OpenAI** | ❌ Paid | https://platform.openai.com/api-keys |
-| **Custom** | Depends | Any OpenAI-compatible API |
+OWURA supports 15+ AI providers. Models are fetched **live from the API** when you add your key — no hardcoded lists.
 
-Models are fetched live from the provider when you add your key — no hardcoded lists.
+| Provider | CLI Name | Free Tier | How to get key |
+|----------|----------|-----------|---------------|
+| **Google Gemini** | `gemini` | ✅ Yes | https://aistudio.google.com/apikey |
+| **OpenAI** | `openai` | ❌ Paid | https://platform.openai.com/api-keys |
+| **Groq** | `groq` | ✅ Yes | https://console.groq.com/keys |
+| **NVIDIA NIM** | `nvidia` | ✅ Yes | https://build.nvidia.com/ |
+| **Together AI** | `together` | ✅ Yes | https://api.together.xyz/signup |
+| **OpenRouter** | `openrouter` | ✅ Yes | https://openrouter.ai/keys |
+| **DeepSeek** | `deepseek` | ✅ Yes | https://platform.deepseek.com/ |
+| **Mistral AI** | `mistral` | ✅ Yes | https://console.mistral.ai/ |
+| **Perplexity** | `perplexity` | ❌ Paid | https://www.perplexity.ai/settings/api |
+| **Fireworks AI** | `fireworks` | ✅ Yes | https://fireworks.ai/ |
+| **Cohere** | `cohere` | ✅ Yes | https://dashboard.cohere.com/ |
+| **xAI (Grok)** | `xai` | ❌ Paid | https://x.ai/api |
+| **GitHub Models** | `github` | ✅ Yes | https://github.com/settings/tokens |
+| **Anthropic** | `anthropic` | ❌ Paid | https://console.anthropic.com/ |
+| **Custom** | `custom <url>` | Depends | Any OpenAI-compatible API |
+
+### Adding a Custom Provider
+
+Any OpenAI-compatible API works:
+```bash
+/provider custom https://api.together.xyz/v1
+/provider custom https://openrouter.ai/api/v1
+/provider custom https://api.deepseek.com/v1
+```
+
+The 14 built-in providers above are just shortcuts — you can use any OpenAI-compatible endpoint as a custom provider.
 
 ---
 
