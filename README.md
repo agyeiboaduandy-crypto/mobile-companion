@@ -1,108 +1,33 @@
 # OWURA
 
-**AI-Powered Terminal Coding Agent**
+**Terminal AI Coding Agent**
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.8+-green.svg)](https://www.python.org/)
 [![Platform](https://img.shields.io/badge/Platform-Termux%20%2F%20Linux-yellow.svg)](https://termux.dev/)
 
-A terminal-based AI coding agent that runs on mobile and desktop. Scaffolds production-grade projects, manages infrastructure, and helps you build real software — without needing a team of engineers to get started.
+OWURA is an AI coding agent that runs in your terminal. It helps you build software — from scripts to full production systems — by generating code, scaffolding projects, managing files, and running commands. Built for Termux on Android, also runs on Linux and macOS.
 
 ---
 
 ## Table of Contents
 
-- [What is OWURA?](#what-is-owura)
+- [Quick Start](#quick-start)
 - [Installation](#installation)
-  - [Termux (Android) — One-Liner](#termux-android--one-liner)
+  - [Termux (Android)](#termux-android)
   - [Linux / macOS](#linux--macos)
   - [Manual Install](#manual-install)
   - [Direct Python](#direct-python)
-- [Quick Start](#quick-start)
-- [Building Projects](#building-projects)
-  - [From a Description](#from-a-description)
-  - [Available Templates](#available-templates)
-- [Commands](#commands)
-- [Providers](#providers)
-- [What Gets Scaffolded](#what-gets-scaffolded)
+- [Specifications](#specifications)
+  - [Technical Overview](#technical-overview)
+  - [Scaffolding Features](#scaffolding-features)
+  - [Providers](#providers)
+- [Usage](#usage)
+  - [Building Projects](#building-projects)
+  - [Commands](#commands)
 - [Troubleshooting](#troubleshooting)
 - [Uninstall](#uninstall)
 - [License](#license)
-
----
-
-## What is OWURA?
-
-OWURA is a terminal-based AI coding agent designed to help anyone build real software — from simple scripts to full production systems. It runs on Android (Termux), Linux, and macOS.
-
-- **Describe what you want**: `/build a Twitter clone with Next.js and PostgreSQL`
-- **It scaffolds the entire project**: Docker, CI/CD, database, auth, tests, monitoring
-- **You just run it**: `docker-compose up -d`
-
-Works on mobile via Termux, or on any Linux system.
-
----
-
-## Installation
-
-### Termux (Android) — One-Liner
-
-```bash
-pkg update && pkg upgrade -y
-pkg install python git curl -y
-curl -sSL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/install.sh | bash
-source ~/.bashrc
-owura
-```
-
-### Linux / macOS
-
-```bash
-curl -sSL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/install.sh | bash
-source ~/.bashrc
-owura
-```
-
-### Manual Install (Most Reliable)
-
-```bash
-# 1. Install Python if you don't have it (Termux)
-pkg install python git
-
-# 2. Clone OWURA
-git clone https://github.com/agyeiboaduandy-crypto/owura.git ~/.owura
-
-# 3. Install dependencies
-pip3 install rich cryptography
-
-# 4. Create the launcher script
-mkdir -p ~/.local/bin
-cat > ~/.local/bin/owura << 'EOF'
-#!/bin/bash
-exec python3 "$HOME/.owura/owura/app.py" "$@"
-EOF
-chmod +x ~/.local/bin/owura
-
-# 5. Add to PATH
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
-source ~/.bashrc
-
-# 6. Run it
-owura
-```
-
-### Direct Python (Always Works)
-
-```bash
-# 1. Prerequisites
-pkg install python git
-git clone https://github.com/agyeiboaduandy-crypto/owura.git ~/.owura
-cd ~/.owura
-pip3 install rich cryptography
-
-# 2. Run directly (no PATH config needed)
-python3 ~/.owura/owura/app.py
-```
 
 ---
 
@@ -113,189 +38,286 @@ owura
 ```
 
 First run walks you through:
-1. **Pick a provider** (Gemini is free — no credit card needed)
-2. **Enter your API key** (get one free at https://aistudio.google.com/apikey)
-3. **Select a model** from the ones fetched automatically from your provider
-4. **Start building** 🚀
+1. Pick an AI provider (Gemini is free, no credit card)
+2. Enter your API key
+3. Select a model from those fetched from your provider
+4. Start building
 
 ---
 
-## Building Projects
+## Installation
 
-### From a Description
+### Termux (Android)
+
+**One-liner:**
+
+```bash
+pkg update && pkg upgrade -y
+pkg install python git curl -y
+curl -sSL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/install.sh | bash
+source ~/.bashrc
+owura
+```
+
+**Step by step if the one-liner doesn't work:**
+
+```bash
+# 1. Update packages
+pkg update && pkg upgrade -y
+
+# 2. Install Python and git
+pkg install python git curl -y
+
+# 3. Clone the repo
+git clone https://github.com/agyeiboaduandy-crypto/owura.git ~/.owura
+
+# 4. Install Python dependencies
+pip3 install rich cryptography
+
+# 5. Create the launcher
+mkdir -p ~/.local/bin
+cat > ~/.local/bin/owura << 'EOF'
+#!/bin/bash
+exec python3 "$HOME/.owura/owura/app.py" "$@"
+EOF
+chmod +x ~/.local/bin/owura
+
+# 6. Add to PATH
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# 7. Run
+owura
+```
+
+**Note for Termux:** If you get storage permission errors, run `termux-setup-storage` first.
+
+---
+
+### Linux / macOS
+
+```bash
+curl -sSL https://raw.githubusercontent.com/agyeiboaduandy-crypto/owura/main/install.sh | bash
+source ~/.bashrc
+owura
+```
+
+---
+
+### Manual Install
+
+Works everywhere including Termux:
+
+```bash
+git clone https://github.com/agyeiboaduandy-crypto/owura.git ~/.owura
+pip3 install rich cryptography
+mkdir -p ~/.local/bin
+
+cat > ~/.local/bin/owura << 'EOF'
+#!/bin/bash
+exec python3 "$HOME/.owura/owura/app.py" "$@"
+EOF
+
+chmod +x ~/.local/bin/owura
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+owura
+```
+
+---
+
+### Direct Python
+
+No PATH setup needed:
+
+```bash
+git clone https://github.com/agyeiboaduandy-crypto/owura.git ~/.owura
+cd ~/.owura
+pip3 install rich cryptography
+python3 ~/.owura/owura/app.py
+```
+
+---
+
+## Specifications
+
+### Technical Overview
+
+| Aspect | Details |
+|--------|---------|
+| **Language** | Python 3.8+ |
+| **Interface** | Interactive TUI (terminal) via Rich |
+| **AI Providers** | 15 built-in + any OpenAI-compatible endpoint |
+| **Model Discovery** | Fetches available models live from provider API |
+| **API Keys** | Encrypted at rest via Fernet (cryptography) |
+| **Memory** | Persistent JSON store with facts, learnings, patterns |
+| **Privacy** | Prompt sanitization strips emails, phones, keys, passwords |
+| **Skills** | 12+ built-in skills with auto-detection |
+| **Project Scaffolding** | 9 templates with Docker, CI/CD, DB, tests |
+| **Web Tools** | Search, GitHub, PyPI, npm, StackOverflow, Wikipedia, weather |
+| **Caching** | Local response cache with auto-cleanup (7-day TTL) |
+| **Compaction** | Auto-cleanup of pip/npm/temp caches |
+| **Platforms** | Termux (Android), Linux, macOS |
+
+### Scaffolding Features
+
+Every scaffolded project includes:
+
+| Layer | What you get |
+|-------|-------------|
+| **Container** | Multi-stage Dockerfile, Docker Compose (app + PostgreSQL + Redis + Nginx) |
+| **Database** | Async SQLAlchemy (Python) / Prisma (Node) with migrations |
+| **API Layer** | Versioned routes, request schemas, service layer |
+| **Authentication** | JWT-ready middleware, password hashing |
+| **Security** | CORS, Helmet, rate limiting, input validation |
+| **Logging** | Structured JSON logging with request tracing |
+| **Monitoring** | Prometheus + Grafana (production compose) |
+| **Testing** | Pytest / Vitest with fixtures |
+| **CI/CD** | GitHub Actions — lint, test, build, deploy |
+| **Health** | /api/health endpoint with Docker healthcheck |
+| **Config** | .env.example with every variable documented |
+| **Scaling** | Production compose with replica support |
+
+### Providers
+
+15 AI providers supported. Models are fetched live when you add your key.
+
+| Provider | CLI name | Free tier | Key |
+|----------|----------|-----------|-----|
+| Google Gemini | `gemini` | ✅ | https://aistudio.google.com/apikey |
+| Groq | `groq` | ✅ | https://console.groq.com/keys |
+| NVIDIA NIM | `nvidia` | ✅ | https://build.nvidia.com/ |
+| Together AI | `together` | ✅ | https://api.together.xyz/signup |
+| OpenRouter | `openrouter` | ✅ | https://openrouter.ai/keys |
+| DeepSeek | `deepseek` | ✅ | https://platform.deepseek.com/ |
+| Mistral AI | `mistral` | ✅ | https://console.mistral.ai/ |
+| Fireworks AI | `fireworks` | ✅ | https://fireworks.ai/ |
+| Cohere | `cohere` | ✅ | https://dashboard.cohere.com/ |
+| GitHub Models | `github` | ✅ | https://github.com/settings/tokens |
+| OpenAI | `openai` | ❌ | https://platform.openai.com/api-keys |
+| Perplexity | `perplexity` | ❌ | https://www.perplexity.ai/settings/api |
+| xAI (Grok) | `xai` | ❌ | https://x.ai/api |
+| Anthropic | `anthropic` | ❌ | https://console.anthropic.com/ |
+| Custom | `custom <url>` | varies | Any OpenAI-compatible API |
+
+Any OpenAI-compatible endpoint works as a custom provider:
+```bash
+/provider custom https://api.together.xyz/v1
+/provider custom https://openrouter.ai/api/v1
+```
+
+---
+
+## Usage
+
+### Building Projects
+
+Describe what you want:
 
 ```bash
 /build a Twitter clone with Next.js and PostgreSQL
-/build a REST API with FastAPI and Redis caching
+/build a REST API with FastAPI and Redis
 /build a real-time chat app with WebSockets
 /build a cryptocurrency dashboard with Go
 /build a microservice for user authentication
 ```
 
-OWURA detects the right tech stack from your description and scaffolds a complete production project:
-
-### Available Templates
+OWURA detects the tech stack and scaffolds a complete production project. You can also pick a specific template:
 
 ```bash
-/create fastapi my-api          # FastAPI + PostgreSQL (async)
+/create fastapi my-api          # FastAPI + PostgreSQL async
 /create flask-api my-api        # Flask + SQLAlchemy
 /create express my-api          # Express.js + TypeScript + Prisma
 /create nextjs my-app           # Next.js + TypeScript
 /create django my-app           # Django + SQLite
 /create react my-app            # React + Vite
 /create go-api my-api           # Go HTTP server
-/create python-cli my-tool      # Python CLI tool
+/create python-cli my-tool      # Python CLI
 /create rust-cli my-tool        # Rust CLI (cargo)
 ```
 
-### What Gets Scaffolded
-
-Every project from `/build` or `/create` includes:
-
-| Feature | What you get |
-|---------|-------------|
-| **Docker** | Multi-stage build, production-optimized |
-| **Docker Compose** | App + PostgreSQL + Redis + Nginx, all wired up |
-| **Database** | Async SQLAlchemy (Python) or Prisma (Node), with migrations |
-| **API Architecture** | Versioned routes, schemas, services layer |
-| **Testing** | Pytest or Vitest with fixtures and CI integration |
-| **CI/CD** | GitHub Actions — lint, test, build, deploy |
-| **Monitoring** | Prometheus + Grafana ready (production compose) |
-| **Logging** | Structured JSON logging, request tracing |
-| **Rate Limiting** | SlowAPI (Python) or express-rate-limit (Node) |
-| **Security** | CORS, Helmet, input validation |
-| **Health Checks** | `/api/health` endpoint for orchestration |
-| **NGINX** | Reverse proxy with load balancing config |
-| **Environments** | `.env.example` with all documented variables |
-
 ---
 
-## Commands
+### Commands
 
-### Building
-
+**Building**
 | Command | Description |
 |---------|-------------|
-| `/build <description>` | Just describe what you want — OWURA scaffolds it |
+| `/build <description>` | Scaffold a project from a description |
 | `/create <template> <name>` | Create from a specific template |
 | `/analyze [path]` | Analyze a project and suggest improvements |
-| `/generate tests <file>` | Generate test stubs for a file |
-| `/deploy <platform>` | Generate deploy config (docker/heroku/railway/vercel) |
+| `/generate tests <file>` | Generate test stubs |
+| `/deploy <platform>` | Generate deploy config |
 
-### AI & Provider
-
+**AI & Provider**
 | Command | Description |
 |---------|-------------|
-| `/provider [name]` | Set provider — interactive, fetches models from API |
-| `/key [key]` | Set or view your API key |
+| `/provider [name]` | Set AI provider (interactive, fetches models) |
+| `/key [key]` | Set or view API key |
 | `/model [name]` | Set model manually |
 
-### Code & Files
-
+**Code & Files**
 | Command | Description |
 |---------|-------------|
-| `/run <command>` | Execute any shell command |
-| `/ls [path]` | List directory contents |
+| `/run <cmd>` | Execute shell command |
+| `/ls [path]` | List directory |
 | `/cat <file>` | View file with syntax highlighting |
 | `/cd <path>` | Change directory |
 | `/git <args>` | Run git commands |
 | `/pwd` | Show current directory |
 
-### Smart Skills
-
+**Smart Skills**
 | Command | Description |
 |---------|-------------|
-| `/review <code/file>` | Code quality review with scoring |
-| `/optimize <code/file>` | Performance optimization suggestions |
+| `/review <code/file>` | Code quality review with score |
+| `/optimize <code/file>` | Performance optimization tips |
 | `/reverse <target>` | Reverse engineer code/APIs/binary |
-| `/loophole <problem>` | Find creative workarounds |
-| `/fix <problem>` | Make impossible things work |
+| `/loophole <problem>` | Find workarounds |
+| `/fix <problem>` | Solve impossible problems |
 
-### Web & Search
-
+**Web & Search**
 | Command | Description |
 |---------|-------------|
-| `/search <query>` | Search the web |
-| `/github <query>` | Search GitHub repos |
-| `/pypi <package>` | Search Python Package Index |
-| `/npm <package>` | Search npm registry |
+| `/search <query>` | Web search |
+| `/github <query>` | Search GitHub |
+| `/pypi <package>` | Search PyPI |
+| `/npm <package>` | Search npm |
 | `/so <query>` | Search StackOverflow |
 | `/wiki <topic>` | Wikipedia lookup |
-| `/weather <city>` | Get weather forecast |
+| `/weather <city>` | Weather forecast |
 | `/news [topic]` | Latest news |
-| `/fetch <url>` | Fetch and display a URL |
-| `/docs <query> [lang]` | Search documentation |
+| `/docs <query> [lang]` | Documentation search |
 
-### Memory & Learning
-
+**Memory & Learning**
 | Command | Description |
 |---------|-------------|
-| `/memory` | Show memory statistics |
-| `/remember <fact>` | Store a fact permanently |
-| `/recall <query>` | Search your memories |
+| `/memory` | Memory statistics |
+| `/remember <fact>` | Store a fact |
+| `/recall <query>` | Search memories |
 | `/project <name>` | Record a project |
 | `/learn <what> -> <outcome>` | Record a learning |
 
-### System
-
+**System**
 | Command | Description |
 |---------|-------------|
 | `/help` | Show all commands |
-| `/config` | Show current configuration |
-| `/status` | System status and usage |
-| `/privacy` | Privacy and security status |
-| `/compact` | Full system cleanup |
+| `/config` | Show configuration |
+| `/status` | System status |
+| `/privacy` | Privacy status |
+| `/compact` | Full cleanup |
 | `/clean` | Quick cache cleanup |
-| `/who` | Learn about OWURA |
-| `/mission` | See our mission |
+| `/who` | About OWURA |
 | `/version` | Show version |
 | `/quit` | Exit |
 
-### Creative
-
+**Creative**
 | Command | Description |
 |---------|-------------|
-| `/story <concept>` | Learn complex ideas as stories |
-| `/metaphor <concept>` | Understand with metaphors |
-| `/challenge [easy]` | Get coding challenges |
+| `/story <concept>` | Learn through stories |
+| `/metaphor <concept>` | Understand via metaphors |
+| `/challenge [easy]` | Coding challenges |
 | `/wisdom` | Programming wisdom |
 | `/poem` | Code poetry |
-| `/ascii <text>` | ASCII art generator |
-
----
-
-## Providers
-
-OWURA supports 15+ AI providers. Models are fetched **live from the API** when you add your key — no hardcoded lists.
-
-| Provider | CLI Name | Free Tier | How to get key |
-|----------|----------|-----------|---------------|
-| **Google Gemini** | `gemini` | ✅ Yes | https://aistudio.google.com/apikey |
-| **OpenAI** | `openai` | ❌ Paid | https://platform.openai.com/api-keys |
-| **Groq** | `groq` | ✅ Yes | https://console.groq.com/keys |
-| **NVIDIA NIM** | `nvidia` | ✅ Yes | https://build.nvidia.com/ |
-| **Together AI** | `together` | ✅ Yes | https://api.together.xyz/signup |
-| **OpenRouter** | `openrouter` | ✅ Yes | https://openrouter.ai/keys |
-| **DeepSeek** | `deepseek` | ✅ Yes | https://platform.deepseek.com/ |
-| **Mistral AI** | `mistral` | ✅ Yes | https://console.mistral.ai/ |
-| **Perplexity** | `perplexity` | ❌ Paid | https://www.perplexity.ai/settings/api |
-| **Fireworks AI** | `fireworks` | ✅ Yes | https://fireworks.ai/ |
-| **Cohere** | `cohere` | ✅ Yes | https://dashboard.cohere.com/ |
-| **xAI (Grok)** | `xai` | ❌ Paid | https://x.ai/api |
-| **GitHub Models** | `github` | ✅ Yes | https://github.com/settings/tokens |
-| **Anthropic** | `anthropic` | ❌ Paid | https://console.anthropic.com/ |
-| **Custom** | `custom <url>` | Depends | Any OpenAI-compatible API |
-
-### Adding a Custom Provider
-
-Any OpenAI-compatible API works:
-```bash
-/provider custom https://api.together.xyz/v1
-/provider custom https://openrouter.ai/api/v1
-/provider custom https://api.deepseek.com/v1
-```
-
-The 14 built-in providers above are just shortcuts — you can use any OpenAI-compatible endpoint as a custom provider.
 
 ---
 
@@ -311,17 +333,17 @@ export PATH="$HOME/.local/bin:$PATH"
 pkg install python
 ```
 
-### "pip install failed — externally managed"
+### "pip install failed"
 ```bash
 pip3 install rich cryptography --break-system-packages
 ```
 
-### "Module not found: cryptography"
+### "cryptography" module error
 ```bash
 pip3 install cryptography
 ```
 
-### Termux permissions
+### Storage permission (Termux)
 ```bash
 termux-setup-storage
 ```
@@ -332,6 +354,7 @@ termux-setup-storage
 
 ```bash
 rm -rf ~/.owura ~/.local/bin/owura
+sed -i '/OWURA/d' ~/.bashrc
 ```
 
 ---
@@ -339,7 +362,3 @@ rm -rf ~/.owura ~/.local/bin/owura
 ## License
 
 Apache License 2.0
-
----
-
-**OWURA** — Code Anywhere. Anytime. Just describe, it builds.
